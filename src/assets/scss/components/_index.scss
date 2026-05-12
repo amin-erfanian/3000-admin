@@ -1,0 +1,6 @@
+@forward './overlay.scss';
+@use './indicator.scss' as *;
+
+$components: (
+  indicator: $indicator,
+);

@@ -1,0 +1,10 @@
+@use './variables' as *;
+
+@function space($count: 1, $unit: px) {
+  $base: map-get($base-space, $unit);
+  @return $base * $count;
+}
+
+@function merge-theme($base-theme, $override) {
+  @return map-merge($base-theme, $override);
+}

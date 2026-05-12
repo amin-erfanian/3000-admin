@@ -1,0 +1,85 @@
+$typography: (
+  default: (
+    title-large: (
+      font-size: 2rem,
+      font-weight: 700,
+      line-height: 2rem,
+      letter-spacing: 0,
+    ),
+    title-medium: (
+      font-size: 1.5rem,
+      font-weight: 400,
+      line-height: 2rem,
+      letter-spacing: 0,
+    ),
+    title-small: (
+      font-size: 0.9rem,
+      font-weight: 500,
+      line-height: 1.25rem,
+    ),
+    label-large: (
+      font-size: 1.25rem,
+      font-weight: 700,
+      line-height: 1.25rem,
+      letter-spacing: 0,
+    ),
+    label-medium: (
+      font-size: 1.125rem,
+      font-weight: 400,
+      line-height: 1.25rem,
+      letter-spacing: 0,
+    ),
+    label-small: (
+      font-size: 0.7rem,
+      font-weight: 500,
+      line-height: 1rem,
+    ),
+    body-large: (
+      font-size: 1rem,
+      font-weight: 500,
+      line-height: 1.5rem,
+      letter-spacing: 0,
+    ),
+    body-medium: (
+      font-size: 0.875rem,
+      font-weight: 500,
+      line-height: 1.57rem,
+      letter-spacing: 0,
+    ),
+    body-small: (
+      font-size: 0.75rem,
+      font-weight: 400,
+      line-height: 1rem,
+    ),
+    caption: (
+      font-size: 0.75rem,
+      font-weight: 700,
+      line-height: 19px,
+    ),
+    button: (
+      font-size: 0.875rem,
+      font-weight: 500,
+      line-height: 25px,
+    ),
+    body-1: (
+      font-size: 1rem,
+      font-weight: 500,
+      line-height: 26px,
+    ),
+    body-2: (
+      font-size: 0.875rem,
+      font-weight: 800,
+      line-height: 32px,
+    ),
+    title: (
+      font-size: 1rem,
+      font-weight: 800,
+      line-height: 32px,
+    ),
+    title-2: (
+      font-size: 1rem,
+      font-weight: 600,
+      line-height: 32px,
+    ),
+  ),
+);

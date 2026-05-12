@@ -1,0 +1,8 @@
+{
+  "name": "3000",
+  "short_name": "3000",
+  "icons": [],
+  "theme_color": "#ffffff",
+  "background_color": "#ffffff",
+  "display": "standalone"
+}

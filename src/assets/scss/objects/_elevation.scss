@@ -1,0 +1,14 @@
+@use '../abstracts/elevation' as *;
+
+@each $level in $levels {
+  :root[data-theme='light'] {
+    .elevation-#{$level} {
+      @include light-elevation($level);
+    }
+  }
+  :root[data-theme='dark'] {
+    .elevation-#{$level} {
+      @include dark-elevation($level);
+    }
+  }
+}

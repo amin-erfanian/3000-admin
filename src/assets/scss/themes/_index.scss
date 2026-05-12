@@ -1,0 +1,139 @@
+@use '../abstracts/colors' as *;
+@use '../abstracts/functions' as *;
+
+// Base light theme
+$light-theme: (
+  primary: #4a90e2,
+  primary-rgb: (
+    74,
+    144,
+    226,
+  ),
+  primary-shade: #3b7cc6,
+
+  secondary: #7fc97f,
+  secondary-rgb: (
+    127,
+    201,
+    127,
+  ),
+  secondary-shade: #6ab36b,
+  background: #edf2f5,
+  background-rgb: (
+    237,
+    242,
+    245,
+  ),
+  skeleton-container: #e2e8f0,
+  container-background: #fafafa,
+  container-background-rgb: (
+    250,
+    250,
+    250,
+  ),
+  background-shadow: #aeaeae80,
+  overlay: #33333350,
+  disabled: #b1afb8,
+  text-on-main-10: #333333,
+  text-on-main-20: #444e5a,
+  text-on-main-30: #656565,
+  text-on-main-40: #7a7a7a,
+  text-on-minor-10: #ffffff,
+  text-on-minor-20: #eaeaea,
+  text-on-minor-30: #cdcdcd,
+  text-on-minor-40: #7a7a7a15,
+  border-10: #dcdcdc,
+  border-20: #bababa,
+  icon: #737579,
+  success: #7fc97f,
+  success-rgb: (
+    127,
+    201,
+    127,
+  ),
+  success-shade: #6ab36b,
+  error: #f1414c,
+  error-rgb: (
+    241,
+    65,
+    76,
+  ),
+  error-shade: #ffebeb,
+  warning: #f2aa01,
+
+  change-minus-color: #f1414c,
+  change-minus-bg: #f1414c50,
+  change-plus-color: #7fc97f,
+  change-plus-bg: #7fc97f50,
+);
+
+// Base dark theme
+$dark-theme: (
+  primary: #7fb3f0,
+  primary-rgb: (
+    127,
+    179,
+    240,
+  ),
+  primary-shade: #6596cc,
+  secondary: #5a9367,
+  secondary-rgb: (
+    90,
+    147,
+    103,
+  ),
+  secondary-shade: #4a7b57,
+  background: #1a1f20,
+  background-rgb: (
+    33,
+    31,
+    33,
+  ),
+  skeleton-container: #555555,
+  container-background: #2b3132,
+  container-background-rgb: (
+    50,
+    48,
+    50,
+  ),
+  background-shadow: #484f504c,
+  overlay: #33333380,
+  disabled: #5c5a62,
+  text-on-main-10: #ffffff,
+  text-on-main-20: #eaeaea,
+  text-on-main-30: #b0b0b0,
+  text-on-main-40: #8c8c8c,
+  text-on-minor-10: #333333,
+  text-on-minor-20: #444e5a,
+  text-on-minor-30: #656565,
+  text-on-minor-40: #7a7a7a15,
+  border-10: #5b5b5b,
+  border-20: #7a7a7a,
+  icon: #737579,
+  success: #5a9367,
+  success-rgb: (
+    90,
+    147,
+    103,
+  ),
+  success-shade: #4a7b57,
+  error: #c84848,
+  error-rgb: (
+    200,
+    72,
+    72,
+  ),
+  error-shade: #553d3d,
+  warning: #c59c00,
+
+  change-minus-color: #f1414c,
+  change-minus-bg: #f1414c30,
+  change-plus-color: #7fc97f,
+  change-plus-bg: #7fc97f30,
+);
+
+// Final $themes map
+$themes: (
+  light: $light-theme,
+  dark: $dark-theme,
+);

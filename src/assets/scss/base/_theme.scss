@@ -1,0 +1,27 @@
+@use '../themes' as themes;
+@use '../abstracts/colors' as colors;
+@use '../abstracts/functions' as fn;
+
+:root {
+  @each $name, $value in map-get(themes.$themes, 'light') {
+    --palette-#{$name}: #{$value};
+  }
+
+  @each $name, $value in colors.$toast-light {
+    --toastify-color-#{$name}: #{$value};
+  }
+
+  @each $name, $value in colors.$icon {
+    --icon-color-#{$name}: #{$value};
+  }
+}
+
+[data-theme='dark'] {
+  @each $name, $value in map-get(themes.$themes, 'dark') {
+    --palette-#{$name}: #{$value};
+  }
+
+  @each $name, $value in colors.$toast-dark {
+    --toastify-color-#{$name}: #{$value};
+  }
+}
