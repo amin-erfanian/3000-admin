@@ -28,6 +28,16 @@ const ROUTES = [
       authRequired: true,
     },
   },
+  {
+    name: 'categories',
+    path: '/categories',
+    component: () => import('@/views/categories/index.vue'),
+    meta: {
+      layout: 'main',
+      title: 'مدیریت دسته‌بندی‌ها',
+      authRequired: true,
+    },
+  },
   // {
   //   name: 'orders',
   //   path: '/orders',

@@ -47,6 +47,11 @@
       link: '/products',
     },
     {
+      label: 'مدیریت دسته‌بندی‌ها',
+      icon: 'category',
+      link: '/categories',
+    },
+    {
       label: 'سفارشات',
       icon: 'orders',
       link: '/order',
