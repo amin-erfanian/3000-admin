@@ -1,7 +1,11 @@
 <template>
   <aside class="sidebar" :class="{ 'sidebar--collapsed': isCollapsed }">
     <div class="sidebar__toggle" @click="toggleSidebar">
-      <Icon :icon="isCollapsed ? 'mdi:chevron-left' : 'mdi:chevron-right'" />
+      <BaseIcon
+        class="toggle-icon"
+        :class="{ 'toggle-icon--collapsed': isCollapsed }"
+        :iconName="'arrow-left'"
+      />
     </div>
 
     <nav class="sidebar__nav">
@@ -11,7 +15,7 @@
           :class="{ 'sidebar__item--active': isActive(item.link) }"
           @click="handleNavigate(item)"
         >
-          <Icon :icon="item.icon" class="sidebar__icon" />
+          <BaseIcon :iconName="item.icon" class="sidebar__icon" />
           <span v-if="!isCollapsed" class="sidebar__label">{{
             item.label
           }}</span>
@@ -25,6 +29,7 @@
   import { ref } from 'vue';
   import { useRouter, useRoute } from 'vue-router';
   import { Icon } from '@iconify/vue';
+  import BaseIcon from '../common/base/base-icon.vue';
 
   const router = useRouter();
   const route = useRoute();
@@ -33,27 +38,27 @@
   const menuItems = [
     {
       label: 'داشبورد',
-      icon: 'mdi:view-dashboard-outline',
+      icon: 'dashboard',
       link: '/',
     },
     {
       label: 'مدیریت کالا',
-      icon: 'mdi:cog-outline',
+      icon: 'product',
       link: '/products',
     },
     {
       label: 'سفارشات',
-      icon: 'mdi:cart-outline',
-      link: '/orders',
+      icon: 'orders',
+      link: '/order',
     },
     {
       label: 'فروشندگان',
-      icon: 'mdi:account-group-outline',
+      icon: 'seller',
       link: '/sellers',
     },
     {
       label: 'گزارشات',
-      icon: 'mdi:chart-line',
+      icon: 'report',
       link: '/reports',
     },
   ];
@@ -102,10 +107,20 @@
       @include flex($align: center, $justify: center);
       cursor: pointer;
       z-index: 10;
-      transition: transform 0.2s ease;
+      transition: all 0.2s ease;
 
       &:hover {
         transform: scale(1.1);
+      }
+
+      .toggle-icon {
+        width: 16px;
+        height: 16px;
+        transform: rotate(180deg);
+
+        &--collapsed {
+          transform: rotate(0);
+        }
       }
     }
 
@@ -137,7 +152,8 @@
     }
 
     &__icon {
-      font-size: 24px;
+      width: 18px;
+      height: 18px;
       flex-shrink: 0;
     }
 

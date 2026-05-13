@@ -1,10 +1,10 @@
 <template>
   <div class="product-list">
     <div class="product-list__heading heading">
-      <div class="heading__headline">ثبت کالا</div>
+      <div class="heading__headline">مدیریت کالا</div>
       <div class="heading__border"></div>
       <div class="heading__text">
-        اینجا می‌توانید کالای خود را برای فروش در فروشگاه ثبت کنید
+        اینجا می‌توانید کالاهای ثبت شده را مشاهده و تعیین وضعیت کنید
       </div>
     </div>
 
@@ -14,12 +14,6 @@
 
     <div class="product-list__filter">
       <ProductFilter v-model="filter" :filterItems="FILTER_ITEMS" />
-    </div>
-
-    <div class="product-list__add-product">
-      <BaseButton @click="handleRouteToAddNewProduct" size="small">
-        ثبت کالای جدید
-      </BaseButton>
     </div>
 
     <BaseTable
@@ -68,7 +62,7 @@
 
       <template #cell(status)="{ value, item }">
         <BaseSkeleton v-if="item._skeleton" width="80px" height="16px" />
-        <span v-else>{{ value || '—' }}</span>
+        <ProductStatusBadge :status="value" />
       </template>
 
       <template #cell(min_price)="{ value, item }">
@@ -91,7 +85,7 @@
           :disabled="loadingId !== null"
           @click="onAddProduct(item)"
         >
-          افزودن همین کالا
+          عملیات
         </BaseButton>
       </template>
     </BaseTable>
@@ -109,7 +103,6 @@
 <script setup>
   import { ref, watch, computed, onMounted } from 'vue';
   import { usePromise } from '@/composables';
-  import { createVariant } from '@/services/variant.service';
 
   import { useRoute, useRouter } from 'vue-router';
 
@@ -123,11 +116,17 @@
   import BaseSkeleton from '@/components/common/base/base-skeleton.vue';
 
   import { FILTER_ITEMS } from '@/constants/filters';
+  import ProductStatusBadge from '@/components/general/product-status-badge.vue';
 
   const router = useRouter();
   const route = useRoute();
 
   const searchQuery = ref('');
+
+  const marketStatusMapper = {
+    marketable: { label: 'قابل فروش', variant: 'green' },
+    'non-marketable': { label: 'غیر قابل فروش', variant: 'red' },
+  };
 
   const filter = ref({
     categories: [],
@@ -145,20 +144,9 @@
   const headers = [
     { title: 'تصویر', key: 'image_src' },
     { title: 'عنوان', key: 'title', sort: true },
+    { title: 'وضعیت', key: 'status', sort: true },
     { title: 'برند', key: 'brand', sort: true },
     { title: 'دسته‌بندی', key: 'category', sort: true },
-    { title: 'وضعیت', key: 'status', sort: true },
-    {
-      title: 'کمترین قیمت',
-      key: 'min_price',
-      sort: (a, b, order) => ((a.min_price ?? 0) - (b.min_price ?? 0)) * order,
-    },
-    {
-      title: 'فروشندگان',
-      key: 'number_of_sellers',
-      sort: (a, b, order) =>
-        ((a.number_of_sellers ?? 0) - (b.number_of_sellers ?? 0)) * order,
-    },
     { key: 'actions', label: 'عملیات' },
   ];
 
@@ -167,7 +155,7 @@
     _skeleton: true,
   }));
 
-  const { data: productList, execute } = usePromise(getProductList);
+  const { data: productList, loading, execute } = usePromise(getProductList);
 
   function parseQueryToFilter(query) {
     const parsed = { ...filter.value };
@@ -220,7 +208,9 @@
     { immediate: true },
   );
 
-  const items = computed(() => productList.value?.items ?? []);
+  const items = computed(() => {
+    return productList.value?.items ?? [];
+  });
   const pager = computed(() => productList.value?.pager ?? null);
 
   const currentPage = computed(() => pager.value?.page ?? 1);
@@ -246,23 +236,12 @@
 
   const loadingId = ref(null);
 
-  // ── usePromise ───────────────────────────────────────────────
-  const { execute: submitVariant } = usePromise(createVariant, {
-    throwOnError: false,
-    onError: async (err) => {
-      console.error('Failed to create variant:', err);
-      // toast.error('خطا در افزودن کالا');
-    },
-  });
-
   // ── Handler ──────────────────────────────────────────────────
   const onAddProduct = async (item) => {
     loadingId.value = item.id;
 
     const payload = {
       productId: item.id,
-      price: 0,
-      stock: 0,
     };
 
     const result = await submitVariant(payload);

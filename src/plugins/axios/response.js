@@ -35,7 +35,7 @@ export const onResponseRejected = (error) => {
 
   if (status === 401) {
     localStorage.removeItem('token');
-    router.replace('/login');
+    router.replace('/sign-in');
   }
 
   if (messageError && errorNotification?.show) {

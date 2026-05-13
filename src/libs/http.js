@@ -69,7 +69,7 @@ class HttpService {
 
     if (status === 401) {
       localStorage.removeItem('token');
-      router.replace('/login');
+      router.replace('/sign-in');
     }
 
     if (messageError && errorNotification?.show) {
@@ -100,7 +100,7 @@ class HttpService {
 
     if (error.status === 401) {
       localStorage.removeItem('token');
-      router.replace('/login');
+      router.replace('/sign-in');
     }
 
     if (!error.data && error.status === 0) {
