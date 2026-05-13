@@ -147,10 +147,13 @@
 <script setup>
   import { ref, computed, onMounted } from 'vue';
   import CategoryTreeItem from './CategoryTreeItem.vue';
-  import axios from 'axios';
   import { usePromise } from '@/composables';
-
-  const API_BASE = '/api/categories';
+  import {
+    createCategory,
+    deleteCategory,
+    getCategoryTree,
+    updateCategory,
+  } from '@/services/category.service';
 
   // Fetch categories
   const {
@@ -158,7 +161,7 @@
     loading,
     error,
     execute: fetchCategories,
-  } = usePromise(() => axios.get(`${API_BASE}/tree`).then((res) => res.data));
+  } = usePromise(getCategoryTree);
 
   // Root categories (no parent)
   const rootCategories = computed(() => {
@@ -254,9 +257,9 @@
 
     try {
       if (isEditMode.value) {
-        await axios.put(`${API_BASE}/${form.value._id}`, form.value);
+        await updateCategory(form.value._id, form.value);
       } else {
-        await axios.post(API_BASE, form.value);
+        await createCategory(form.value);
       }
 
       await fetchCategories();
@@ -288,7 +291,7 @@
     deleting.value = true;
 
     try {
-      await axios.delete(`${API_BASE}/${categoryToDelete.value._id}`);
+      await deleteCategory(categoryToDelete.value._id);
       await fetchCategories();
       closeDeleteModal();
     } catch (err) {
