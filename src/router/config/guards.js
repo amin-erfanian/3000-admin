@@ -6,7 +6,7 @@ const beforeEach = (to) => {
 
   const hasToken = !!localStorage.getItem('token');
 
-  if (!hasToken && !['confirm'].includes(to.name)) adminStore.resetLoginData();
+  if (!hasToken) adminStore.logout();
 
   if (hasToken && AUTH_ROUTES.includes(to.name)) {
     return { path: '/' };
