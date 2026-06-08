@@ -16,79 +16,27 @@
       <ProductFilter v-model="filter" :filterItems="FILTER_ITEMS" />
     </div>
 
-    <BaseTable
-      :headerItems="headers"
-      :data="loading ? skeletonRows : items"
-      :currentPage="currentPage"
-      :itemsPerPage="itemsPerPage"
-    >
-      <template #cell(image_src)="{ value, item }">
-        <BaseSkeleton
-          v-if="item._skeleton"
-          width="48px"
-          height="48px"
-          radius="6px"
-        />
-        <img
-          v-else-if="value"
-          :src="value"
-          style="
-            width: 48px;
-            height: 48px;
-            object-fit: cover;
-            border-radius: 6px;
-          "
-        />
-        <span v-else>—</span>
-      </template>
-
-      <template #cell(title)="{ value, item }">
-        <BaseSkeleton v-if="item._skeleton" width="220px" height="16px" />
-        <div v-else style="display: flex; flex-direction: column; gap: 4px">
-          <strong>{{ value || '—' }}</strong>
-          <small>ID: {{ item.id }}</small>
+    <div class="product-list__content">
+      <template v-if="loading">
+        <div
+          v-for="index in 3"
+          :key="`skeleton-${index}`"
+          class="product-list__skeleton"
+        >
+          <BaseSkeleton width="100%" height="220px" radius="12px" />
         </div>
       </template>
 
-      <template #cell(brand)="{ value, item }">
-        <BaseSkeleton v-if="item._skeleton" width="120px" height="16px" />
-        <span v-else>{{ value || '—' }}</span>
+      <template v-else-if="items.length">
+        <ProductDetailsCard
+          v-for="item in items"
+          :key="item._id || item.id"
+          :product="item"
+        />
       </template>
 
-      <template #cell(category)="{ value, item }">
-        <BaseSkeleton v-if="item._skeleton" width="120px" height="16px" />
-        <span v-else>{{ value || '—' }}</span>
-      </template>
-
-      <template #cell(status)="{ value, item }">
-        <BaseSkeleton v-if="item._skeleton" width="80px" height="16px" />
-        <ProductStatusBadge :status="value" />
-      </template>
-
-      <template #cell(min_price)="{ value, item }">
-        <BaseSkeleton v-if="item._skeleton" width="100px" height="16px" />
-        <span v-else>{{ formatPrice(value) }}</span>
-      </template>
-
-      <template #cell(number_of_sellers)="{ value, item }">
-        <BaseSkeleton v-if="item._skeleton" width="40px" height="16px" />
-        <span v-else>{{ value ?? '—' }}</span>
-      </template>
-
-      <template #cell(actions)="{ item }">
-        <BaseSkeleton v-if="item._skeleton" width="100px" height="16px" />
-        <BaseButton
-          v-else
-          size="small"
-          variant="outlined"
-          :loading="loadingId === item.id"
-          :disabled="loadingId !== null"
-          @click="onAddProduct(item)"
-        >
-          عملیات
-        </BaseButton>
-      </template>
-    </BaseTable>
+      <div v-else class="product-list__empty">موردی برای نمایش وجود ندارد.</div>
+    </div>
 
     <div class="product-list__pagination" v-if="pager">
       <BasePagination
@@ -108,25 +56,17 @@
 
   import Search from '@/components/general/search.vue';
   import ProductFilter from '@/components/general/product-filter.vue';
-  import BaseTable from '@/components/common/base/base-table.vue';
-  import BaseButton from '@/components/common/base/base-button.vue';
   import BasePagination from '@/components/common/base/base-pagination.vue';
+  import BaseSkeleton from '@/components/common/base/base-skeleton.vue';
+  import ProductDetailsCard from '@/components/general/product-details-card.vue';
 
   import { getProductList } from '@/services/product.service';
-  import BaseSkeleton from '@/components/common/base/base-skeleton.vue';
-
   import { FILTER_ITEMS } from '@/constants/filters';
-  import ProductStatusBadge from '@/components/general/product-status-badge.vue';
 
   const router = useRouter();
   const route = useRoute();
 
   const searchQuery = ref('');
-
-  const marketStatusMapper = {
-    marketable: { label: 'قابل فروش', variant: 'green' },
-    'non-marketable': { label: 'غیر قابل فروش', variant: 'red' },
-  };
 
   const filter = ref({
     categories: [],
@@ -140,20 +80,6 @@
     low_stock: false,
     keyword: '',
   });
-
-  const headers = [
-    { title: 'تصویر', key: 'image_src' },
-    { title: 'عنوان', key: 'title', sort: true },
-    { title: 'وضعیت', key: 'status', sort: true },
-    { title: 'برند', key: 'brand', sort: true },
-    { title: 'دسته‌بندی', key: 'category', sort: true },
-    { key: 'actions', label: 'عملیات' },
-  ];
-
-  const skeletonRows = Array.from({ length: 10 }).map((_, i) => ({
-    id: `skeleton-${i}`,
-    _skeleton: true,
-  }));
 
   const { data: productList, loading, execute } = usePromise(getProductList);
 
@@ -175,8 +101,6 @@
     });
 
     filter.value = parsed;
-
-    // keep searchQuery synced explicitly
     searchQuery.value = query.keyword ?? '';
   }
 
@@ -208,18 +132,8 @@
     { immediate: true },
   );
 
-  const items = computed(() => {
-    return productList.value?.items ?? [];
-  });
+  const items = computed(() => productList.value?.items ?? []);
   const pager = computed(() => productList.value?.pager ?? null);
-
-  const currentPage = computed(() => pager.value?.page ?? 1);
-  const itemsPerPage = computed(() => pager.value?.item_per_page ?? 10);
-
-  function formatPrice(val) {
-    if (val == null) return '—';
-    return Number(val).toLocaleString('fa-IR') + ' ریال';
-  }
 
   function goToPage(page) {
     router.replace({
@@ -229,30 +143,6 @@
       },
     });
   }
-
-  const handleRouteToAddNewProduct = () => {
-    router.replace('/product/create/1');
-  };
-
-  const loadingId = ref(null);
-
-  // ── Handler ──────────────────────────────────────────────────
-  const onAddProduct = async (item) => {
-    loadingId.value = item.id;
-
-    const payload = {
-      productId: item.id,
-    };
-
-    const result = await submitVariant(payload);
-
-    if (result) {
-      console.log('Variant created:', result);
-      // toast.success('کالا با موفقیت افزوده شد');
-    }
-
-    loadingId.value = null;
-  };
 </script>
 
 <style lang="scss" scoped>
@@ -288,8 +178,23 @@
       }
     }
 
-    &__search {
+    &__search,
+    &__filter,
+    &__content {
       width: 100%;
+    }
+
+    &__content {
+      @include flex(column);
+      gap: space(3);
+    }
+
+    &__empty {
+      border: 1px dashed var(--palette-border-10);
+      border-radius: $radius-2x;
+      padding: space(6);
+      text-align: center;
+      color: var(--palette-text-on-main-40);
     }
 
     &__pagination {
