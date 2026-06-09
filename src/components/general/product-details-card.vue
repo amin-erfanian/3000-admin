@@ -7,7 +7,9 @@
       <ProductStatusBadge :status="product.status || 'draft'" />
     </div>
 
-    <div class="product-details-card__meta-id">{{ product._id || product.id || '—' }}</div>
+    <div v-if="product.titleEn" class="product-details-card__meta-id">{{
+      product.titleEn
+    }}</div>
 
     <div class="product-details-card__content">
       <div class="product-details-card__media">
@@ -18,22 +20,35 @@
       <div class="product-details-card__fields">
         <div class="product-details-card__field">
           <span class="product-details-card__label">برند</span>
-          <span class="product-details-card__value">{{ product.brand?.titleFa || '—' }}</span>
+          <span class="product-details-card__value">{{
+            product.brand?.titleFa || '—'
+          }}</span>
         </div>
 
         <div class="product-details-card__field">
           <span class="product-details-card__label">دسته‌بندی</span>
-          <span class="product-details-card__value">{{ product.category?.titleFa || '—' }}</span>
+          <span class="product-details-card__value">{{
+            product.category?.titleFa || '—'
+          }}</span>
+        </div>
+
+        <div class="product-details-card__field">
+          <span class="product-details-card__label">قیمت مرجع</span>
+          <span class="product-details-card__value">{{
+            product.referencePrice || '—'
+          }}</span>
         </div>
 
         <div class="product-details-card__field">
           <span class="product-details-card__label">کمیسیون</span>
-          <span class="product-details-card__value">{{ normalizeValue(product.commission) }}</span>
+          <span class="product-details-card__value">{{
+            normalizeValue(product.commission)
+          }}</span>
         </div>
 
         <div class="product-details-card__field">
-          <span class="product-details-card__label">ابعاد</span>
-          <span class="product-details-card__value">{{ dimensionsText }}</span>
+          <span class="product-details-card__label">ابعاد (سانتی متر)</span>
+          <span class="product-details-card__value">{{ dimensionsText }} </span>
         </div>
 
         <div class="product-details-card__field">
@@ -45,28 +60,47 @@
 
         <div class="product-details-card__field">
           <span class="product-details-card__label">وزن</span>
-          <span class="product-details-card__value">{{ normalizeValue(product.weight) }}</span>
-        </div>
-
-        <div class="product-details-card__field">
-          <span class="product-details-card__label">عنوان فارسی</span>
-          <span class="product-details-card__value">{{ product.titleFa || '—' }}</span>
-        </div>
-
-        <div class="product-details-card__field">
-          <span class="product-details-card__label">عنوان انگلیسی</span>
-          <span class="product-details-card__value">{{ product.titleEn || '—' }}</span>
+          <span class="product-details-card__value">{{
+            normalizeValue(product.weight)
+          }}</span>
         </div>
       </div>
+
+      <div class="product-details-card__actions">
+        <BaseButton
+          size="small"
+          class="product-details-card__action product-details-card__action--approve"
+          @click="approveProduct"
+        >
+          تایید کالا
+        </BaseButton>
+        <BaseButton
+          size="small"
+          variant="outlined"
+          class="product-details-card__action product-details-card__action--reject"
+          @click="showRejectionModal = true"
+        >
+          رد کالا
+        </BaseButton>
+      </div>
     </div>
+
+    <ProductRejectionModal
+      v-model="showRejectionModal"
+      :product="product"
+      :property-options="rejectionPropertyOptions"
+      @submit="submitRejection"
+    />
   </div>
 </template>
 
 <script setup>
-  import { computed } from 'vue';
+  import { computed, ref } from 'vue';
 
+  import BaseButton from '@/components/common/base/base-button.vue';
   import ProductStatusBadge from '@/components/general/product-status-badge.vue';
   import ProductMediaSlider from '@/components/general/product-media-slider.vue';
+  import ProductRejectionModal from '@/components/general/product-rejection-modal.vue';
 
   const props = defineProps({
     product: {
@@ -74,6 +108,19 @@
       required: true,
     },
   });
+  const emit = defineEmits(['approve', 'reject']);
+
+  const showRejectionModal = ref(false);
+
+  const rejectionPropertyOptions = computed(() => [
+    { name: 'عنوان کالا', value: 'titleFa' },
+    { name: 'برند', value: 'brand' },
+    { name: 'دسته‌بندی', value: 'category' },
+    { name: 'کمیسیون', value: 'commission' },
+    { name: 'ابعاد', value: 'dimensions' },
+    { name: 'اصالت کالا', value: 'properties.isFake' },
+    { name: 'وزن', value: 'weight' },
+  ]);
 
   const normalizeValue = (value) => {
     if (value === null || value === undefined || value === '') return '—';
@@ -85,15 +132,21 @@
     const width = props.product.dimensions?.width;
     const height = props.product.dimensions?.height;
 
-    if ([length, width, height].every((value) => value !== null && value !== undefined)) {
-      return `${length} × ${width} × ${height}`;
+    if (
+      [length, width, height].every(
+        (value) => value !== null && value !== undefined,
+      )
+    ) {
+      return `${length} (طول) × ${width} (عرض) × ${height} (ارتفاع)`;
     }
 
     return '—';
   });
 
   const imageMedia = computed(() => {
-    const mainImage = props.product.images?.main ? [props.product.images.main] : [];
+    const mainImage = props.product.images?.main
+      ? [props.product.images.main]
+      : [];
     const galleryImages = Array.isArray(props.product.images?.gallery)
       ? props.product.images.gallery
       : [];
@@ -102,11 +155,19 @@
       .filter(Boolean)
       .map((image) => ({
         type: 'image',
-        src: typeof image === 'string' ? image : image.src || image.url || image.path || image.image,
+        src:
+          typeof image === 'string'
+            ? image
+            : image.src || image.url || image.path || image.image,
         thumb:
           typeof image === 'string'
             ? image
-            : image.thumb || image.thumbnail || image.poster || image.src || image.url || image.path,
+            : image.thumb ||
+              image.thumbnail ||
+              image.poster ||
+              image.src ||
+              image.url ||
+              image.path,
         title:
           typeof image === 'string'
             ? 'تصویر کالا'
@@ -156,6 +217,20 @@
   });
 
   const mediaItems = computed(() => [...imageMedia.value, ...videoMedia.value]);
+
+  const approveProduct = () => {
+    emit('approve', {
+      productId: props.product._id || props.product.id,
+    });
+  };
+
+  const submitRejection = ({ selectedProperties, hint }) => {
+    emit('reject', {
+      productId: props.product._id || props.product.id,
+      reason: hint,
+      propertyKeys: selectedProperties.map((item) => item.value),
+    });
+  };
 </script>
 
 <style scoped lang="scss">
@@ -180,12 +255,13 @@
     }
 
     &__meta-id {
-      @include typography(label-small);
-      color: var(--palette-text-on-main-40);
+      @include typography(label-medium);
+      color: var(--palette-text-on-main-30);
       word-break: break-all;
     }
 
     &__content {
+      width: 100%;
       @include flex(column);
       gap: space(3);
     }
@@ -201,6 +277,7 @@
     }
 
     &__fields {
+      width: 100%;
       @include flex($justify: flex-start, $align: stretch);
       flex-wrap: wrap;
       gap: space(2);
@@ -226,6 +303,26 @@
       @include typography(body-medium);
       color: var(--palette-text-on-main-20);
       word-break: break-word;
+    }
+
+    &__actions {
+      width: 100%;
+      @include flex($align: center, $justify: flex-end);
+      gap: space(2);
+      margin-top: space(2);
+    }
+
+    &__action {
+      min-width: 120px;
+
+      &--reject {
+        color: var(--palette-error);
+        border-color: var(--palette-error);
+      }
+
+      &--approve {
+        background-color: var(--palette-success);
+      }
     }
   }
 </style>

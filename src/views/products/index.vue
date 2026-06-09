@@ -32,6 +32,8 @@
           v-for="item in items"
           :key="item._id || item.id"
           :product="item"
+          @approve="handleApprove"
+          @reject="handleReject"
         />
       </template>
 
@@ -60,7 +62,11 @@
   import BaseSkeleton from '@/components/common/base/base-skeleton.vue';
   import ProductDetailsCard from '@/components/general/product-details-card.vue';
 
-  import { getProductList } from '@/services/product.service';
+  import {
+    getProductList,
+    approveProduct,
+    rejectProduct,
+  } from '@/services/product.service';
   import { FILTER_ITEMS } from '@/constants/filters';
 
   const router = useRouter();
@@ -82,6 +88,8 @@
   });
 
   const { data: productList, loading, execute } = usePromise(getProductList);
+  const { execute: approveExecute } = usePromise(approveProduct);
+  const { execute: rejectExecute } = usePromise(rejectProduct);
 
   function parseQueryToFilter(query) {
     const parsed = { ...filter.value };
@@ -143,6 +151,26 @@
       },
     });
   }
+
+  const refetchProducts = async () => {
+    await execute({
+      ...route.query,
+      keyword: searchQuery.value,
+    });
+  };
+
+  const handleApprove = async ({ productId }) => {
+    await approveExecute(productId);
+    await refetchProducts();
+  };
+
+  const handleReject = async ({ productId, reason, propertyKeys }) => {
+    await rejectExecute(productId, {
+      reason,
+      propertyKeys,
+    });
+    await refetchProducts();
+  };
 </script>
 
 <style lang="scss" scoped>
