@@ -33,7 +33,7 @@ export const onResponseRejected = (error) => {
     response.data?.message ||
     AXIOS_DEFAULT_ERROR.fa;
 
-  if (status === 401) {
+  if (status === 401 || status === 403) {
     localStorage.removeItem('token');
     router.replace('/sign-in');
   }

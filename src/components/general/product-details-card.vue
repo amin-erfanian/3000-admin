@@ -59,7 +59,7 @@
         </div>
 
         <div class="product-details-card__field">
-          <span class="product-details-card__label">وزن</span>
+          <span class="product-details-card__label">وزن (گرم)</span>
           <span class="product-details-card__value">{{
             normalizeValue(product.weight)
           }}</span>

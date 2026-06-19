@@ -67,7 +67,7 @@ class HttpService {
       response?.data?.message ||
       AXIOS_DEFAULT_ERROR.fa;
 
-    if (status === 401) {
+    if (status === 401 || status === 403) {
       localStorage.removeItem('token');
       router.replace('/sign-in');
     }
@@ -98,7 +98,7 @@ class HttpService {
   async handleCapacitorError(error, config = {}) {
     const { errorNotification = { show: true } } = config;
 
-    if (error.status === 401) {
+    if (error.status === 401 || status === 403) {
       localStorage.removeItem('token');
       router.replace('/sign-in');
     }
