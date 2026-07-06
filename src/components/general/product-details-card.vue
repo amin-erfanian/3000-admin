@@ -144,30 +144,14 @@
   });
 
   const imageMedia = computed(() => {
-    const mainImage = props.product.images?.main
-      ? [props.product.images.main]
-      : [];
-    const galleryImages = Array.isArray(props.product.images?.gallery)
-      ? props.product.images.gallery
-      : [];
+    const mainImage = props.product.images?.main;
+    const galleryImages = props.product.images?.gallery;
 
-    return [...mainImage, ...galleryImages]
+    return [mainImage, ...galleryImages]
       .filter(Boolean)
       .map((image) => ({
         type: 'image',
-        src:
-          typeof image === 'string'
-            ? image
-            : image.src || image.url || image.path || image.image,
-        thumb:
-          typeof image === 'string'
-            ? image
-            : image.thumb ||
-              image.thumbnail ||
-              image.poster ||
-              image.src ||
-              image.url ||
-              image.path,
+        src: image,
         title:
           typeof image === 'string'
             ? 'تصویر کالا'
@@ -183,34 +167,10 @@
       .map((video) => {
         if (!video) return null;
 
-        if (typeof video === 'string') {
-          return {
-            type: 'video',
-            src: video,
-            thumb: '/images/placeholder.png',
-            title: 'ویدیو',
-          };
-        }
-
-        const src =
-          video.src ||
-          video.url ||
-          video.path ||
-          video.video ||
-          video.file ||
-          '';
-
-        if (!src) return null;
-
         return {
           type: 'video',
-          src,
-          thumb:
-            video.poster ||
-            video.thumbnail ||
-            video.image ||
-            '/images/placeholder.png',
-          title: video.titleFa || video.titleEn || 'ویدیو',
+          src: video,
+          title: 'ویدیو',
         };
       })
       .filter(Boolean);

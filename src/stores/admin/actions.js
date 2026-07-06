@@ -1,5 +1,4 @@
-import adminService, { signIn } from '@/services/admin.service';
-import { jwtDecode } from 'jwt-decode';
+import adminService from '@/services/admin.service';
 import { toast } from 'vue3-toastify';
 
 import { useRouter } from 'vue-router';

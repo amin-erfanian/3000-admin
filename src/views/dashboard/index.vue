@@ -1,48 +1,10 @@
 <template>
   <div class="dashboard scrollable">
-    <div class="dashboard__view">
-      <div class="dashboard__header">
-        <div class="dashboard__header-actions">
-          <div @click="goToResources" class="dashboard__header-right">
-            <span class="dashboard__header-resource-manage">
-              مدیریت منابع مالی
-            </span>
-          </div>
-          <div class="dashboard__header-left">
-            <base-icon
-              class="dashboard__header-icon settings"
-              icon-name="settings"
-              path="/tools"
-              @click="goToSettings"
-            />
-            <base-icon
-              class="dashboard__header-icon"
-              :icon-name="isLoggedIn ? 'user' : 'no-user'"
-              @click="goToProfile"
-            />
-          </div>
-        </div>
-      </div>
-    </div>
+    <div class="dashboard__view"> </div>
   </div>
 </template>
 
-<script setup>
-  import BaseIcon from '@/components/common/base/base-icon.vue';
-
-  import { useRouter } from 'vue-router';
-  const router = useRouter();
-
-  const goToProfile = () => {
-    router.push({ name: 'tools', query: { currentPage: 'profile' } });
-  };
-
-  const goToSettings = () => {
-    router.push({
-      path: '/dashboard-settings',
-    });
-  };
-</script>
+<script setup></script>
 
 <style scoped lang="scss">
   .dashboard {

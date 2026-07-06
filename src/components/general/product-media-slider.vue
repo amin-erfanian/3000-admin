@@ -15,8 +15,9 @@
           type="button"
           @click="openCurrent"
         >
+          {{}}
           <img
-            :src="normalizedMedia[currentIndex].thumb"
+            :src="normalizedMedia[currentIndex].src"
             :alt="normalizedMedia[currentIndex].title"
           />
 
@@ -42,11 +43,13 @@
           v-for="(item, index) in normalizedMedia"
           :key="`${item.src}-${index}`"
           class="product-media-slider__thumb"
-          :class="{ 'product-media-slider__thumb--active': index === currentIndex }"
+          :class="{
+            'product-media-slider__thumb--active': index === currentIndex,
+          }"
           type="button"
           @click="goTo(index)"
         >
-          <img :src="item.thumb" :alt="item.title" />
+          <img :src="item.src" :alt="item.title" />
           <span
             v-if="item.type === 'video'"
             class="product-media-slider__play product-media-slider__play--thumb"
@@ -101,12 +104,16 @@
           </button>
         </div>
 
-        <div class="product-media-slider__thumbs product-media-slider__thumbs--lightbox">
+        <div
+          class="product-media-slider__thumbs product-media-slider__thumbs--lightbox"
+        >
           <button
             v-for="(item, index) in normalizedMedia"
             :key="`${item.src}-lightbox-${index}`"
             class="product-media-slider__thumb"
-            :class="{ 'product-media-slider__thumb--active': index === currentIndex }"
+            :class="{
+              'product-media-slider__thumb--active': index === currentIndex,
+            }"
             type="button"
             @click="goTo(index)"
           >
@@ -140,46 +147,22 @@
   const showLightbox = ref(false);
 
   const normalizedMedia = computed(() => {
-    return props.mediaItems
-      .map((item) => {
-        if (!item) return null;
-
-        if (typeof item === 'string') {
-          return {
-            type: 'image',
-            src: item,
-            thumb: item,
-            title: 'تصویر کالا',
-          };
-        }
-
-        const src = item.src || item.url || item.path || item.image || item.file || '';
-
-        if (!src) return null;
-
-        const type = item.type === 'video' ? 'video' : 'image';
-
-        return {
-          type,
-          src,
-          thumb: item.thumb || item.thumbnail || item.poster || src,
-          title: item.titleFa || item.titleEn || item.title || (type === 'video' ? 'ویدیو' : 'تصویر کالا'),
-        };
-      })
-      .filter(Boolean);
+    return props.mediaItems;
   });
 
   const nextItem = () => {
     if (!normalizedMedia.value.length) return;
 
-    currentIndex.value = (currentIndex.value + 1) % normalizedMedia.value.length;
+    currentIndex.value =
+      (currentIndex.value + 1) % normalizedMedia.value.length;
   };
 
   const prevItem = () => {
     if (!normalizedMedia.value.length) return;
 
     currentIndex.value =
-      (currentIndex.value - 1 + normalizedMedia.value.length) % normalizedMedia.value.length;
+      (currentIndex.value - 1 + normalizedMedia.value.length) %
+      normalizedMedia.value.length;
   };
 
   const goTo = (index) => {

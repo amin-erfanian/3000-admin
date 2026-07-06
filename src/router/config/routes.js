@@ -11,6 +11,7 @@ const ROUTES = [
   {
     name: 'dashboard',
     path: '/',
+    redirect: '/products',
     component: () => import('@/views/dashboard/index.vue'),
     meta: {
       layout: 'main',
