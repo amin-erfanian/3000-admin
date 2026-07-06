@@ -28,7 +28,6 @@
 <script setup>
   import { ref } from 'vue';
   import { useRouter, useRoute } from 'vue-router';
-  import { Icon } from '@iconify/vue';
   import BaseIcon from '../common/base/base-icon.vue';
 
   const router = useRouter();
@@ -53,7 +52,7 @@
     },
     {
       label: 'سفارشات',
-      icon: 'orders',
+      icon: 'order',
       link: '/order',
     },
     {
@@ -157,8 +156,8 @@
     }
 
     &__icon {
-      width: 18px;
-      height: 18px;
+      width: 20px;
+      height: 20px;
       flex-shrink: 0;
     }
 

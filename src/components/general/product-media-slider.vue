@@ -2,13 +2,15 @@
   <div class="product-media-slider" dir="rtl">
     <div v-if="normalizedMedia.length" class="product-media-slider__content">
       <div class="product-media-slider__main-wrap">
-        <button
+        <div
           class="product-media-slider__nav product-media-slider__nav--next"
-          type="button"
           @click="nextItem"
         >
-          ‹
-        </button>
+          <BaseIcon
+            iconName="arrow-left"
+            class="product-media-slider__nav-icon"
+          />
+        </div>
 
         <button
           class="product-media-slider__main"
@@ -29,13 +31,15 @@
           </span>
         </button>
 
-        <button
+        <div
           class="product-media-slider__nav product-media-slider__nav--prev"
-          type="button"
           @click="prevItem"
         >
-          ›
-        </button>
+          <BaseIcon
+            iconName="arrow-left"
+            class="product-media-slider__nav-icon product-media-slider__nav-icon--prev"
+          />
+        </div>
       </div>
 
       <div class="product-media-slider__thumbs">
@@ -70,13 +74,15 @@
     >
       <div class="product-media-slider__lightbox" dir="rtl">
         <div class="product-media-slider__lightbox-main-wrap">
-          <button
+          <div
             class="product-media-slider__nav product-media-slider__nav--next"
-            type="button"
             @click="nextItem"
           >
-            ‹
-          </button>
+            <BaseIcon
+              iconName="arrow-left"
+              class="product-media-slider__nav-icon"
+            />
+          </div>
 
           <div class="product-media-slider__lightbox-main">
             <img
@@ -91,17 +97,18 @@
               autoplay
               playsinline
               :src="normalizedMedia[currentIndex]?.src"
-              :poster="normalizedMedia[currentIndex]?.thumb"
             ></video>
           </div>
 
-          <button
+          <div
             class="product-media-slider__nav product-media-slider__nav--prev"
-            type="button"
             @click="prevItem"
           >
-            ›
-          </button>
+            <BaseIcon
+              iconName="arrow-left"
+              class="product-media-slider__nav-icon product-media-slider__nav-icon--prev"
+            />
+          </div>
         </div>
 
         <div
@@ -117,7 +124,7 @@
             type="button"
             @click="goTo(index)"
           >
-            <img :src="item.thumb" :alt="item.title" />
+            <img :src="item.src" :alt="item.title" />
             <span
               v-if="item.type === 'video'"
               class="product-media-slider__play product-media-slider__play--thumb"
@@ -135,6 +142,7 @@
   import { computed, ref, watch } from 'vue';
 
   import BaseModal from '@/components/common/base/base-modal.vue';
+  import BaseIcon from '../common/base/base-icon.vue';
 
   const props = defineProps({
     mediaItems: {
@@ -257,6 +265,7 @@
       color: #fff;
       background: rgba(0, 0, 0, 0.45);
       @include flex($justify: center, $align: center);
+      flex-shrink: 0;
       z-index: 3;
 
       &--next {
@@ -265,6 +274,15 @@
 
       &--prev {
         right: 8px;
+      }
+    }
+
+    &__nav-icon {
+      width: 22px;
+      height: 22px;
+
+      &--prev {
+        transform: scaleX(-1);
       }
     }
 
