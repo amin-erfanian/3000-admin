@@ -17,7 +17,6 @@
 
   import HeaderComponent from '@/components/single-instance/headerComponent/headerComponent.vue';
   import SidebarComponent from '@/components/single-instance/sidebar-component.vue';
-  import TheFooter from '@/components/single-instance/the-footer.vue';
 
   const mainScroll = ref(null);
   provide('mainScroll', mainScroll);
@@ -26,13 +25,15 @@
 <style lang="scss" scoped>
   .main-layout {
     width: 100%;
-    @include flex($dir: column, $align: center);
+    @include flex($dir: column, $align: stretch);
     min-height: 100vh;
+    height: 100%;
+    overflow: hidden;
 
     &__body {
       @include flex($align: stretch);
-      flex-grow: 1;
       width: 100%;
+      overflow: hidden;
     }
 
     &__sidebar {
@@ -40,7 +41,8 @@
     }
 
     &__main {
-      @include flex($dir: column, $align: center);
+      overflow-y: auto;
+      @include flex($dir: column, $align: stretch);
       flex-grow: 1;
 
       width: 100%;
@@ -51,7 +53,6 @@
     &__content {
       flex-grow: 1;
       width: 100%;
-      height: 100%;
       padding: space(10);
     }
   }
