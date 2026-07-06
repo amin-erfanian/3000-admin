@@ -54,10 +54,6 @@
       user-select: none;
       flex-shrink: 0;
       white-space: nowrap;
-
-      @include media-query(large) {
-        @include typography(body-medium);
-      }
     }
 
     &__arrow-icon {

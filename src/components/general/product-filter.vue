@@ -131,10 +131,7 @@
       p {
         color: var(--palette-text-on-main-10);
         @include typography(body-small);
-
-        @include media-query(large) {
-          @include typography(body-medium);
-        }
+        white-space: nowrap;
       }
 
       &.active {
