@@ -19,9 +19,9 @@
         v-for="category in rootCategories"
         :key="category._id"
         :category="category"
-        :all-categories="data"
         @edit="openEditModal"
         @delete="handleDelete"
+        @add="handleAddSubCategory"
       />
     </div>
 
@@ -30,7 +30,11 @@
       <div class="modal">
         <div class="modal-header">
           <h3>{{
-            isEditMode ? 'ویرایش دسته‌بندی' : 'افزودن دسته‌بندی جدید'
+            isEditMode
+              ? 'ویرایش دسته‌بندی'
+              : isAddingSubCategory
+              ? 'افزودن زیر دسته‌بندی'
+              : 'افزودن دسته‌بندی جدید'
           }}</h3>
           <button @click="closeModal" class="btn-close">&times;</button>
         </div>
@@ -57,31 +61,6 @@
           <div class="form-group">
             <label>اسلاگ *</label>
             <input v-model="form.slug" type="text" placeholder="slug-example" />
-          </div>
-
-          <div class="form-group">
-            <label>دسته‌بندی والد</label>
-            <select v-model="form.parent">
-              <option :value="null">بدون والد (دسته اصلی)</option>
-              <option
-                v-for="cat in availableParents"
-                :key="cat._id"
-                :value="cat._id"
-                :disabled="isEditMode && cat._id === form._id"
-              >
-                {{ cat.titleFa }}
-              </option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>تصویر (URL)</label>
-            <input v-model="form.image" type="text" placeholder="https://..." />
-          </div>
-
-          <div class="form-group">
-            <label>هشدار دلیل بازگشت</label>
-            <textarea v-model="form.returnReasonAlert" rows="3"></textarea>
           </div>
 
           <div class="form-group checkbox">
@@ -168,10 +147,6 @@
     if (!data.value) return [];
     return data.value.filter((cat) => !cat.parent);
   });
-
-  // Available parents for dropdown (all categories)
-  const availableParents = computed(() => data.value || []);
-
   // Modal state
   const showModal = ref(false);
   const isEditMode = ref(false);
@@ -187,6 +162,7 @@
   });
   const submitting = ref(false);
   const modalError = ref(null);
+  const isAddingSubCategory = ref(false);
 
   // Delete modal state
   const showDeleteModal = ref(false);
@@ -195,14 +171,15 @@
   const deleteError = ref(null);
 
   // Open create modal
-  const openCreateModal = () => {
+  const openCreateModal = (parentCategoryId = null, isSubCategory = false) => {
     isEditMode.value = false;
+    isAddingSubCategory.value = isSubCategory;
     form.value = {
       _id: null,
       titleFa: '',
       titleEn: '',
       slug: '',
-      parent: null,
+      parent: parentCategoryId,
       image: '',
       returnReasonAlert: '',
       isActive: true,
@@ -213,8 +190,8 @@
 
   // Open edit modal
   const openEditModal = (category) => {
-    console.log(category);
     isEditMode.value = true;
+    isAddingSubCategory.value = false;
     form.value = {
       _id: category._id,
       titleFa: category.titleFa,
@@ -242,8 +219,24 @@
       returnReasonAlert: '',
       isActive: true,
     };
+    isEditMode.value = false;
+    isAddingSubCategory.value = false;
     modalError.value = null;
   };
+
+  const buildCategoryPayload = () => ({
+    titleFa: form.value.titleFa,
+    titleEn: form.value.titleEn || '',
+    slug: form.value.slug,
+    parent: isEditMode.value
+      ? form.value.parent || null
+      : isAddingSubCategory.value
+      ? form.value.parent || null
+      : null,
+    image: form.value.image || '',
+    returnReasonAlert: form.value.returnReasonAlert || '',
+    isActive: form.value.isActive,
+  });
 
   // Submit form (create or update)
   const handleSubmit = async () => {
@@ -257,10 +250,16 @@
     submitting.value = true;
 
     try {
+      const payload = buildCategoryPayload();
+      if (!payload.parent && isAddingSubCategory.value) {
+        modalError.value = 'شناسه دسته‌بندی والد الزامی است.';
+        return;
+      }
+
       if (isEditMode.value) {
-        await updateCategory(form.value._id, form.value);
+        await updateCategory(form.value._id, payload);
       } else {
-        await createCategory(form.value);
+        await createCategory(payload);
       }
 
       await fetchCategories();
@@ -300,6 +299,10 @@
     } finally {
       deleting.value = false;
     }
+  };
+
+  const handleAddSubCategory = (category) => {
+    openCreateModal(category._id, true);
   };
 
   onMounted(() => {

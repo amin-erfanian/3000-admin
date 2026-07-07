@@ -46,11 +46,10 @@
     </div>
 
     <div v-if="isExpanded && hasChildren" class="tree-children">
-        <CategoryTreeItem
+      <CategoryTreeItem
         v-for="child in props.category.children"
         :key="child._id"
         :category="child"
-        :all-categories="allCategories"
         @add="$emit('add', $event)"
         @edit="$emit('edit', $event)"
         @delete="$emit('delete', $event)"
@@ -68,10 +67,6 @@
   const props = defineProps({
     category: {
       type: Object,
-      required: true,
-    },
-    allCategories: {
-      type: Array,
       required: true,
     },
   });

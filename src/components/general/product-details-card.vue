@@ -33,7 +33,7 @@
         </div>
 
         <div class="product-details-card__field">
-          <span class="product-details-card__label">قیمت مرجع</span>
+          <span class="product-details-card__label">قیمت مرجع (ریال)</span>
           <span class="product-details-card__value">{{
             product.referencePrice || '—'
           }}</span>

@@ -48,7 +48,7 @@
     {
       label: 'مدیریت دسته‌بندی‌ها',
       icon: 'category',
-      // link: '/categories',
+      link: '/categories',
     },
     {
       label: 'سفارشات',
