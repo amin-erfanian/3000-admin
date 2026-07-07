@@ -6,48 +6,22 @@
     </div>
 
     <div class="header__actions">
-      <div class="action__item sign-in">
-        <span class="action__title">ورود | ثبت‌نام</span>
+      <div class="header__action-item logout">
+        <span class="header__title" @click="handleLogout">خروج</span>
       </div>
     </div>
   </header>
 </template>
 
 <script setup>
-  import BaseDropdown from '@/components/common/base/base-dropdown.vue';
+  import useAdminStore from '@/stores/admin';
+  const adminStore = useAdminStore();
 
   import { useRouter } from 'vue-router';
   const router = useRouter();
 
-  const navigationItems = [
-    {
-      label: 'کالا',
-      icon: 'mdi:heart-outline',
-      items: [
-        {
-          label: 'جستجو و ثبت کالا',
-          link: '/product/list',
-        },
-        {
-          label: 'مدیریت کالا',
-          link: '/product/management',
-        },
-      ],
-    },
-    {
-      label: 'فروش عمده',
-      icon: 'mdi:store-outline',
-      url: '/',
-    },
-    {
-      label: 'تماس باما',
-      icon: 'mdi:phone-outline',
-      url: '/',
-    },
-  ];
-
-  const handleRouteToItem = (item) => {
-    router.push(item.link);
+  const handleLogout = () => {
+    adminStore.logout();
   };
 </script>
 
@@ -74,6 +48,15 @@
     &__assortment {
       @include flex($align: center);
       gap: space();
+    }
+
+    &__actions {
+      @include flex($align: center);
+      gap: space(2);
+    }
+
+    &__action-item {
+      cursor: pointer;
     }
   }
 </style>

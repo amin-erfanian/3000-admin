@@ -213,13 +213,14 @@
 
   // Open edit modal
   const openEditModal = (category) => {
+    console.log(category);
     isEditMode.value = true;
     form.value = {
       _id: category._id,
       titleFa: category.titleFa,
       titleEn: category.titleEn || '',
       slug: category.slug,
-      parent: category.parent?._id || null,
+      parent: category.parent || null,
       image: category.image || '',
       returnReasonAlert: category.returnReasonAlert || '',
       isActive: category.isActive,

@@ -48,22 +48,22 @@
     {
       label: 'مدیریت دسته‌بندی‌ها',
       icon: 'category',
-      link: '/categories',
+      // link: '/categories',
     },
     {
       label: 'سفارشات',
       icon: 'order',
-      link: '/order',
+      // link: '/order',
     },
     {
       label: 'فروشندگان',
       icon: 'seller',
-      link: '/sellers',
+      // link: '/sellers',
     },
     {
       label: 'گزارشات',
       icon: 'report',
-      link: '/reports',
+      // link: '/reports',
     },
   ];
 

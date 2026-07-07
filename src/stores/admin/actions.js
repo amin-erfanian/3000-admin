@@ -15,6 +15,7 @@ export default {
   },
 
   async logout() {
+    localStorage.removeItem('token');
     this.resetLoginData();
     router.push('/sign-in');
   },

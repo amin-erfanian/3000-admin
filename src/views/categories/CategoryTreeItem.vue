@@ -1,15 +1,14 @@
-<!-- CategoryTreeItem.vue -->
 <template>
   <div class="tree-item">
     <div class="tree-item-content">
-      <button
+      <div
         v-if="hasChildren"
         @click="toggleExpanded"
         class="expand-btn"
         :class="{ expanded: isExpanded }"
       >
-        ▶
-      </button>
+        <BaseIcon iconName="arrow-left" />
+      </div>
       <span v-else class="expand-placeholder"></span>
 
       <div class="category-info">
@@ -22,26 +21,22 @@
       </div>
 
       <div class="actions">
-        <button
+        <BaseIcon
+          iconName="edit"
           @click="$emit('edit', category)"
-          class="btn-icon btn-edit"
-          title="ویرایش"
-        >
-          ✏️
-        </button>
-        <button
+          class="btn-icon edit"
+        />
+        <BaseIcon
+          iconName="trash-bin"
           @click="$emit('delete', category)"
-          class="btn-icon btn-delete"
-          title="حذف"
-        >
-          🗑️
-        </button>
+          class="btn-icon delete"
+        />
       </div>
     </div>
 
     <div v-if="isExpanded && hasChildren" class="tree-children">
       <CategoryTreeItem
-        v-for="child in children"
+        v-for="child in props.category.children"
         :key="child._id"
         :category="child"
         :all-categories="allCategories"
@@ -54,6 +49,8 @@
 
 <script setup>
   import { ref, computed } from 'vue';
+
+  import BaseIcon from '@/components/common/base/base-icon.vue';
 
   const props = defineProps({
     category: {
@@ -70,20 +67,16 @@
 
   const isExpanded = ref(false);
 
-  const children = computed(() => {
-    return props.allCategories.filter(
-      (cat) => cat.parent?._id === props.category._id,
-    );
+  const hasChildren = computed(() => {
+    return props.category.children.length > 0;
   });
-
-  const hasChildren = computed(() => children.value.length > 0);
 
   const toggleExpanded = () => {
     isExpanded.value = !isExpanded.value;
   };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
   .tree-item {
     margin-bottom: 4px;
   }
@@ -96,30 +89,19 @@
     background: #f9fafb;
     border: 1px solid #e5e7eb;
     border-radius: 6px;
-    transition: background 0.2s;
-  }
-
-  .tree-item-content:hover {
-    background: #f3f4f6;
   }
 
   .expand-btn {
-    background: none;
-    border: none;
     cursor: pointer;
-    font-size: 12px;
+    @include flex($align: center, $justify: center);
     color: #6b7280;
-    padding: 4px;
-    transition: transform 0.2s;
     width: 20px;
     height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    transition: transform ease-in-out 100ms;
   }
 
   .expand-btn.expanded {
-    transform: rotate(90deg);
+    transform: rotate(-90deg);
   }
 
   .expand-placeholder {
@@ -164,22 +146,22 @@
   }
 
   .actions {
-    display: flex;
-    gap: 8px;
+    @include flex($align: center);
+    gap: space(3);
   }
 
   .btn-icon {
-    background: none;
-    border: none;
     cursor: pointer;
-    font-size: 18px;
-    padding: 4px 8px;
-    border-radius: 4px;
-    transition: background 0.2s;
-  }
+    width: 18px;
+    height: 18px;
 
-  .btn-icon:hover {
-    background: #e5e7eb;
+    &.edit {
+      color: var(--palette-primary);
+    }
+
+    &.delete {
+      color: var(--palette-error);
+    }
   }
 
   .tree-children {

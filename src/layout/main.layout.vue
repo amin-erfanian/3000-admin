@@ -25,7 +25,7 @@
 <style lang="scss" scoped>
   .main-layout {
     width: 100%;
-    @include flex($dir: column, $align: stretch);
+    @include flex($dir: column, $align: stretch, $justify: stretch);
     min-height: 100vh;
     height: 100%;
     overflow: hidden;
@@ -33,6 +33,7 @@
     &__body {
       @include flex($align: stretch);
       width: 100%;
+      flex: 1;
       overflow: hidden;
     }
 
