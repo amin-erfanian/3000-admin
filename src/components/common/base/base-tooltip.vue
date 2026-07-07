@@ -193,18 +193,18 @@
   .tooltip {
     display: inline-block;
     position: relative;
-  }
 
-  .tooltip__popup {
-    position: fixed;
-    background-color: #333;
-    color: #fff;
-    padding: 8px 12px;
-    border-radius: 4px;
-    font-size: 14px;
-    white-space: nowrap;
-    z-index: 10000;
-    pointer-events: none;
-    transition: opacity 0.2s ease;
+    &__popup {
+      position: fixed;
+      background-color: #333;
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 14px;
+      white-space: nowrap;
+      z-index: 10000;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
   }
 </style>

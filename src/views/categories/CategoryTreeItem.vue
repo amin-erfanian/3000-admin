@@ -21,25 +21,37 @@
       </div>
 
       <div class="actions">
-        <BaseIcon
-          iconName="edit"
-          @click="$emit('edit', category)"
-          class="btn-icon edit"
-        />
-        <BaseIcon
-          iconName="trash-bin"
-          @click="$emit('delete', category)"
-          class="btn-icon delete"
-        />
+        <BaseTooltip class="action-btn" text="افزودن زیر مجموعه">
+          <BaseIcon
+            iconName="add"
+            @click="$emit('add', category)"
+            class="btn-icon add"
+          />
+        </BaseTooltip>
+        <BaseTooltip class="action-btn" text="ویرایش">
+          <BaseIcon
+            iconName="edit"
+            @click="$emit('edit', category)"
+            class="btn-icon edit"
+          />
+        </BaseTooltip>
+        <BaseTooltip class="action-btn" text="حذف">
+          <BaseIcon
+            iconName="trash-bin"
+            @click="$emit('delete', category)"
+            class="btn-icon delete"
+          />
+        </BaseTooltip>
       </div>
     </div>
 
     <div v-if="isExpanded && hasChildren" class="tree-children">
-      <CategoryTreeItem
+        <CategoryTreeItem
         v-for="child in props.category.children"
         :key="child._id"
         :category="child"
         :all-categories="allCategories"
+        @add="$emit('add', $event)"
         @edit="$emit('edit', $event)"
         @delete="$emit('delete', $event)"
       />
@@ -51,6 +63,7 @@
   import { ref, computed } from 'vue';
 
   import BaseIcon from '@/components/common/base/base-icon.vue';
+  import BaseTooltip from '@/components/common/base/base-tooltip.vue';
 
   const props = defineProps({
     category: {
@@ -63,7 +76,7 @@
     },
   });
 
-  defineEmits(['edit', 'delete']);
+  defineEmits(['add', 'edit', 'delete']);
 
   const isExpanded = ref(false);
 
@@ -150,10 +163,18 @@
     gap: space(3);
   }
 
+  .action-btn {
+    @include flex($align: center, $justify: center);
+  }
+
   .btn-icon {
     cursor: pointer;
     width: 18px;
     height: 18px;
+
+    &.add {
+      color: var(--palette-text-on-main-40);
+    }
 
     &.edit {
       color: var(--palette-primary);
