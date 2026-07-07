@@ -2,86 +2,87 @@
   <div class="product-details-card" dir="rtl">
     <div class="product-details-card__header">
       <h3 class="product-details-card__title">
-        {{ product.titleFa || product.titleEn || '—' }}
+        {{ product.titleFa || '—' }}
       </h3>
+      <span v-if="product.titleEn" class="product-details-card__meta-id">
+        ({{ product.titleEn }})
+      </span>
+
       <ProductStatusBadge :status="product.status || 'draft'" />
     </div>
 
-    <div v-if="product.titleEn" class="product-details-card__meta-id">{{
-      product.titleEn
-    }}</div>
-
     <div class="product-details-card__content">
       <div class="product-details-card__media">
-        <div class="product-details-card__media-title">رسانه‌های کالا</div>
-        <ProductMediaSlider :media-items="mediaItems" />
+        <ProductMediaSlider :media-items="mediaItems" compact />
       </div>
 
-      <div class="product-details-card__fields">
-        <div class="product-details-card__field">
-          <span class="product-details-card__label">برند</span>
-          <span class="product-details-card__value">{{
-            product.brand?.titleFa || '—'
-          }}</span>
+      <div class="product-details-card__details">
+        <div class="product-details-card__fields">
+          <div class="product-details-card__field">
+            <span class="product-details-card__label">برند</span>
+            <span class="product-details-card__value">{{
+              product.brand?.titleFa || '—'
+            }}</span>
+          </div>
+
+          <div class="product-details-card__field">
+            <span class="product-details-card__label">دسته‌بندی</span>
+            <span class="product-details-card__value">{{
+              product.category?.titleFa || '—'
+            }}</span>
+          </div>
+
+          <div class="product-details-card__field">
+            <span class="product-details-card__label">قیمت مرجع (ریال)</span>
+            <span class="product-details-card__value">{{
+              product.referencePrice || '—'
+            }}</span>
+          </div>
+
+          <div class="product-details-card__field">
+            <span class="product-details-card__label">کمیسیون</span>
+            <span class="product-details-card__value">{{
+              normalizeValue(product.commission)
+            }}</span>
+          </div>
+
+          <div class="product-details-card__field">
+            <span class="product-details-card__label">ابعاد (سانتی متر)</span>
+            <span class="product-details-card__value">{{ dimensionsText }} </span>
+          </div>
+
+          <div class="product-details-card__field">
+            <span class="product-details-card__label">اصالت کالا</span>
+            <span class="product-details-card__value">
+              {{ product.properties?.isFake ? 'غیراصل' : 'اصل' }}
+            </span>
+          </div>
+
+          <div class="product-details-card__field">
+            <span class="product-details-card__label">وزن (گرم)</span>
+            <span class="product-details-card__value">{{
+              normalizeValue(product.weight)
+            }}</span>
+          </div>
         </div>
 
-        <div class="product-details-card__field">
-          <span class="product-details-card__label">دسته‌بندی</span>
-          <span class="product-details-card__value">{{
-            product.category?.titleFa || '—'
-          }}</span>
+        <div class="product-details-card__actions">
+          <BaseButton
+            size="small"
+            class="product-details-card__action product-details-card__action--approve"
+            @click="approveProduct"
+          >
+            تایید کالا
+          </BaseButton>
+          <BaseButton
+            size="small"
+            variant="outlined"
+            class="product-details-card__action product-details-card__action--reject"
+            @click="showRejectionModal = true"
+          >
+            رد کالا
+          </BaseButton>
         </div>
-
-        <div class="product-details-card__field">
-          <span class="product-details-card__label">قیمت مرجع (ریال)</span>
-          <span class="product-details-card__value">{{
-            product.referencePrice || '—'
-          }}</span>
-        </div>
-
-        <div class="product-details-card__field">
-          <span class="product-details-card__label">کمیسیون</span>
-          <span class="product-details-card__value">{{
-            normalizeValue(product.commission)
-          }}</span>
-        </div>
-
-        <div class="product-details-card__field">
-          <span class="product-details-card__label">ابعاد (سانتی متر)</span>
-          <span class="product-details-card__value">{{ dimensionsText }} </span>
-        </div>
-
-        <div class="product-details-card__field">
-          <span class="product-details-card__label">اصالت کالا</span>
-          <span class="product-details-card__value">
-            {{ product.properties?.isFake ? 'غیراصل' : 'اصل' }}
-          </span>
-        </div>
-
-        <div class="product-details-card__field">
-          <span class="product-details-card__label">وزن (گرم)</span>
-          <span class="product-details-card__value">{{
-            normalizeValue(product.weight)
-          }}</span>
-        </div>
-      </div>
-
-      <div class="product-details-card__actions">
-        <BaseButton
-          size="small"
-          class="product-details-card__action product-details-card__action--approve"
-          @click="approveProduct"
-        >
-          تایید کالا
-        </BaseButton>
-        <BaseButton
-          size="small"
-          variant="outlined"
-          class="product-details-card__action product-details-card__action--reject"
-          @click="showRejectionModal = true"
-        >
-          رد کالا
-        </BaseButton>
       </div>
     </div>
 
@@ -228,6 +229,7 @@
 
     &__media {
       width: 100%;
+      flex: 0 0 auto;
     }
 
     &__media-title {
@@ -238,14 +240,14 @@
 
     &__fields {
       width: 100%;
-      @include flex($justify: flex-start, $align: stretch);
-      flex-wrap: wrap;
+      @include flex(column);
       gap: space(2);
+      flex: 1;
     }
 
     &__field {
-      flex: 1 1 240px;
-      max-width: 100%;
+      width: 100%;
+      flex: none;
       border: 1px solid var(--palette-border-10);
       border-radius: $radius-1x;
       padding: space(2);
@@ -272,6 +274,12 @@
       margin-top: space(2);
     }
 
+    &__details {
+      width: 100%;
+      @include flex(column);
+      gap: space(2);
+    }
+
     &__action {
       min-width: 120px;
 
@@ -282,6 +290,34 @@
 
       &--approve {
         background-color: var(--palette-success);
+      }
+    }
+  }
+
+  @include media-query(medium) {
+    .product-details-card {
+      &__content {
+        @include flex(row);
+        align-items: flex-start;
+      }
+
+      &__media {
+        width: 280px;
+        flex: 0 0 280px;
+      }
+
+      &__details {
+        flex: 1;
+        min-width: 0;
+      }
+
+      &__fields {
+        @include flex(row, $wrap: wrap, $align: flex-start);
+        gap: space(2);
+      }
+
+      &__field {
+        width: calc(50% - #{space(1)});
       }
     }
   }
