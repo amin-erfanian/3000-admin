@@ -121,6 +121,7 @@
     { name: 'ابعاد', value: 'dimensions' },
     { name: 'اصالت کالا', value: 'properties.isFake' },
     { name: 'وزن', value: 'weight' },
+    { name: 'تصاویر', value: 'images'},
   ]);
 
   const normalizeValue = (value) => {

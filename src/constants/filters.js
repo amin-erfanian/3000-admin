@@ -76,6 +76,20 @@ export const FILTER_ITEMS = [
   },
 ];
 
+export const BRAND_FILTER_ITEMS = [
+  {
+    label: 'وضعیت',
+    type: 'checkbox',
+    key: 'statuses',
+    items: [
+      { label: 'پیش نویس', value: 'draft' },
+      { label: 'آماده انتشار', value: 'pending' },
+      { label: 'تایید شده', value: 'active' },
+      { label: 'رد شده', value: 'inactive' },
+    ],
+  },
+];
+
 export const SELLER_FILTER_ITEMS = [
   {
     label: 'گروه اصلی',

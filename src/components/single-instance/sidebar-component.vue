@@ -51,6 +51,11 @@
       link: '/categories',
     },
     {
+      label: 'مدیریت برندها',
+      icon: 'brand',
+      link: '/brands',
+    },
+    {
       label: 'سفارشات',
       icon: 'order',
       // link: '/order',
