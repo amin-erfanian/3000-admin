@@ -40,6 +40,16 @@ const ROUTES = [
     },
   },
   {
+    name: 'category-edit',
+    path: '/categories/:id/edit',
+    component: () => import('@/views/categories/edit.vue'),
+    meta: {
+      layout: 'main',
+      title: 'ویرایش دسته‌بندی',
+      authRequired: true,
+    },
+  },
+  {
     name: 'brands',
     path: '/brands',
     component: () => import('@/views/brands/index.vue'),

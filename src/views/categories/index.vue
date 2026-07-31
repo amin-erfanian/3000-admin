@@ -22,6 +22,7 @@
         @edit="openEditModal"
         @delete="handleDelete"
         @add="handleAddSubCategory"
+        @attributes="goToAttributes"
       />
     </div>
 
@@ -125,6 +126,7 @@
 
 <script setup>
   import { ref, computed, onMounted } from 'vue';
+  import { useRouter } from 'vue-router';
   import CategoryTreeItem from './CategoryTreeItem.vue';
   import { usePromise } from '@/composables';
   import {
@@ -133,6 +135,8 @@
     getCategoryTree,
     updateCategory,
   } from '@/services/category.service';
+
+  const router = useRouter();
 
   // Fetch categories
   const {
@@ -303,6 +307,14 @@
 
   const handleAddSubCategory = (category) => {
     openCreateModal(category._id, true);
+  };
+
+  // Navigate to category attributes (edit) page
+  const goToAttributes = (category) => {
+    router.push({
+      name: 'category-edit',
+      params: { id: category._id },
+    });
   };
 
   onMounted(() => {

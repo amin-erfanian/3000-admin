@@ -28,6 +28,13 @@
             class="btn-icon add"
           />
         </BaseTooltip>
+        <BaseTooltip class="action-btn" text="ویژگی‌ها">
+          <BaseIcon
+            iconName="list"
+            @click="$emit('attributes', category)"
+            class="btn-icon attributes"
+          />
+        </BaseTooltip>
         <BaseTooltip class="action-btn" text="ویرایش">
           <BaseIcon
             iconName="edit"
@@ -51,6 +58,7 @@
         :key="child._id"
         :category="child"
         @add="$emit('add', $event)"
+        @attributes="$emit('attributes', $event)"
         @edit="$emit('edit', $event)"
         @delete="$emit('delete', $event)"
       />
@@ -71,7 +79,7 @@
     },
   });
 
-  defineEmits(['add', 'edit', 'delete']);
+  defineEmits(['add', 'attributes', 'edit', 'delete']);
 
   const isExpanded = ref(false);
 
@@ -169,6 +177,10 @@
 
     &.add {
       color: var(--palette-text-on-main-40);
+    }
+
+    &.attributes {
+      color: var(--palette-primary);
     }
 
     &.edit {
