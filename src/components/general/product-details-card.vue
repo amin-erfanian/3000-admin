@@ -19,6 +19,20 @@
       <div class="product-details-card__details">
         <div class="product-details-card__fields">
           <div class="product-details-card__field">
+            <span class="product-details-card__label">نام فروشنده</span>
+            <span class="product-details-card__value">{{
+              product.seller?.title || '—'
+            }}</span>
+          </div>
+
+          <div class="product-details-card__field">
+            <span class="product-details-card__label">کد فروشنده</span>
+            <span class="product-details-card__value">{{
+              normalizeValue(product.seller?.code)
+            }}</span>
+          </div>
+
+          <div class="product-details-card__field">
             <span class="product-details-card__label">برند</span>
             <span class="product-details-card__value">{{
               product.brand?.titleFa || '—'
@@ -48,7 +62,9 @@
 
           <div class="product-details-card__field">
             <span class="product-details-card__label">ابعاد (سانتی متر)</span>
-            <span class="product-details-card__value">{{ dimensionsText }} </span>
+            <span class="product-details-card__value"
+              >{{ dimensionsText }}
+            </span>
           </div>
 
           <div class="product-details-card__field">
@@ -121,7 +137,7 @@
     { name: 'ابعاد', value: 'dimensions' },
     { name: 'اصالت کالا', value: 'properties.isFake' },
     { name: 'وزن', value: 'weight' },
-    { name: 'تصاویر', value: 'images'},
+    { name: 'تصاویر', value: 'images' },
   ]);
 
   const normalizeValue = (value) => {
