@@ -27,65 +27,13 @@
     </div>
 
     <!-- Create/Edit Modal -->
-    <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
-      <div class="modal">
-        <div class="modal-header">
-          <h3>{{
-            isEditMode
-              ? 'ویرایش دسته‌بندی'
-              : isAddingSubCategory
-              ? 'افزودن زیر دسته‌بندی'
-              : 'افزودن دسته‌بندی جدید'
-          }}</h3>
-          <button @click="closeModal" class="btn-close">&times;</button>
-        </div>
-
-        <div class="modal-body">
-          <div class="form-group">
-            <label>عنوان فارسی *</label>
-            <input
-              v-model="form.titleFa"
-              type="text"
-              placeholder="عنوان فارسی"
-            />
-          </div>
-
-          <div class="form-group">
-            <label>عنوان انگلیسی</label>
-            <input
-              v-model="form.titleEn"
-              type="text"
-              placeholder="عنوان انگلیسی"
-            />
-          </div>
-
-          <div class="form-group">
-            <label>اسلاگ *</label>
-            <input v-model="form.slug" type="text" placeholder="slug-example" />
-          </div>
-
-          <div class="form-group checkbox">
-            <label>
-              <input v-model="form.isActive" type="checkbox" />
-              فعال
-            </label>
-          </div>
-
-          <div v-if="modalError" class="error">{{ modalError }}</div>
-        </div>
-
-        <div class="modal-footer">
-          <button @click="closeModal" class="btn-secondary">انصراف</button>
-          <button
-            @click="handleSubmit"
-            :disabled="submitting"
-            class="btn-primary"
-          >
-            {{ submitting ? 'در حال ذخیره...' : 'ذخیره' }}
-          </button>
-        </div>
-      </div>
-    </div>
+    <CategoryFormModal
+      :show="showModal"
+      :category="editingCategory"
+      :parent-id="parentCategoryId"
+      @close="closeModal"
+      @saved="handleSaved"
+    />
 
     <!-- Delete Confirmation Modal -->
     <div
@@ -128,12 +76,11 @@
   import { ref, computed, onMounted } from 'vue';
   import { useRouter } from 'vue-router';
   import CategoryTreeItem from './CategoryTreeItem.vue';
+  import CategoryFormModal from './CategoryFormModal.vue';
   import { usePromise } from '@/composables';
   import {
-    createCategory,
     deleteCategory,
     getCategoryTree,
-    updateCategory,
   } from '@/services/category.service';
 
   const router = useRouter();
@@ -151,129 +98,40 @@
     if (!data.value) return [];
     return data.value.filter((cat) => !cat.parent);
   });
+
   // Modal state
   const showModal = ref(false);
-  const isEditMode = ref(false);
-  const form = ref({
-    _id: null,
-    titleFa: '',
-    titleEn: '',
-    slug: '',
-    parent: null,
-    image: '',
-    returnReasonAlert: '',
-    isActive: true,
-  });
-  const submitting = ref(false);
-  const modalError = ref(null);
-  const isAddingSubCategory = ref(false);
+  const editingCategory = ref(null);
+  const parentCategoryId = ref(null);
+
+  const openCreateModal = (parentCategoryId = null, isSubCategory = false) => {
+    editingCategory.value = null;
+    parentCategoryId.value = isSubCategory ? parentCategoryId : null;
+    showModal.value = true;
+  };
+
+  const openEditModal = (category) => {
+    editingCategory.value = category;
+    parentCategoryId.value = null;
+    showModal.value = true;
+  };
+
+  const closeModal = () => {
+    showModal.value = false;
+    editingCategory.value = null;
+    parentCategoryId.value = null;
+  };
+
+  const handleSaved = async () => {
+    closeModal();
+    await fetchCategories();
+  };
 
   // Delete modal state
   const showDeleteModal = ref(false);
   const categoryToDelete = ref(null);
   const deleting = ref(false);
   const deleteError = ref(null);
-
-  // Open create modal
-  const openCreateModal = (parentCategoryId = null, isSubCategory = false) => {
-    isEditMode.value = false;
-    isAddingSubCategory.value = isSubCategory;
-    form.value = {
-      _id: null,
-      titleFa: '',
-      titleEn: '',
-      slug: '',
-      parent: parentCategoryId,
-      image: '',
-      returnReasonAlert: '',
-      isActive: true,
-    };
-    modalError.value = null;
-    showModal.value = true;
-  };
-
-  // Open edit modal
-  const openEditModal = (category) => {
-    isEditMode.value = true;
-    isAddingSubCategory.value = false;
-    form.value = {
-      _id: category._id,
-      titleFa: category.titleFa,
-      titleEn: category.titleEn || '',
-      slug: category.slug,
-      parent: category.parent || null,
-      image: category.image || '',
-      returnReasonAlert: category.returnReasonAlert || '',
-      isActive: category.isActive,
-    };
-    modalError.value = null;
-    showModal.value = true;
-  };
-
-  // Close modal
-  const closeModal = () => {
-    showModal.value = false;
-    form.value = {
-      _id: null,
-      titleFa: '',
-      titleEn: '',
-      slug: '',
-      parent: null,
-      image: '',
-      returnReasonAlert: '',
-      isActive: true,
-    };
-    isEditMode.value = false;
-    isAddingSubCategory.value = false;
-    modalError.value = null;
-  };
-
-  const buildCategoryPayload = () => ({
-    titleFa: form.value.titleFa,
-    titleEn: form.value.titleEn || '',
-    slug: form.value.slug,
-    parent: isEditMode.value
-      ? form.value.parent || null
-      : isAddingSubCategory.value
-      ? form.value.parent || null
-      : null,
-    image: form.value.image || '',
-    returnReasonAlert: form.value.returnReasonAlert || '',
-    isActive: form.value.isActive,
-  });
-
-  // Submit form (create or update)
-  const handleSubmit = async () => {
-    modalError.value = null;
-
-    if (!form.value.titleFa || !form.value.slug) {
-      modalError.value = 'عنوان فارسی و اسلاگ الزامی است.';
-      return;
-    }
-
-    submitting.value = true;
-
-    try {
-      const payload = buildCategoryPayload();
-      if (!payload.parent && isAddingSubCategory.value) {
-        modalError.value = 'شناسه دسته‌بندی والد الزامی است.';
-        return;
-      }
-
-      if (isEditMode.value) {
-        await updateCategory(form.value._id, payload);
-      } else {
-        await createCategory(payload);
-      }
-
-      await fetchCategories();
-      closeModal();
-    } catch (err) {
-      modalError.value = err.response?.data?.message?.fa || err.message;
-    } finally {
-      submitting.value = false;
-    }
-  };
 
   // Open delete confirmation
   const handleDelete = (category) => {
@@ -359,11 +217,6 @@
 
   .btn-primary:hover {
     background: #2563eb;
-  }
-
-  .btn-primary:disabled {
-    background: #9ca3af;
-    cursor: not-allowed;
   }
 
   .btn-secondary {
@@ -497,55 +350,6 @@
     gap: 12px;
     padding: 16px 24px;
     border-top: 1px solid #e5e7eb;
-  }
-
-  .form-group {
-    margin-bottom: 20px;
-  }
-
-  .form-group label {
-    display: block;
-    margin-bottom: 6px;
-    font-size: 14px;
-    font-weight: 500;
-    color: #374151;
-  }
-
-  .form-group input[type='text'],
-  .form-group select,
-  .form-group textarea {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
-    font-size: 14px;
-    transition: border-color 0.2s;
-  }
-
-  .form-group input[type='text']:focus,
-  .form-group select:focus,
-  .form-group textarea:focus {
-    outline: none;
-    border-color: #3b82f6;
-  }
-
-  .form-group.checkbox {
-    display: flex;
-    align-items: center;
-  }
-
-  .form-group.checkbox label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: 0;
-    cursor: pointer;
-  }
-
-  .form-group.checkbox input[type='checkbox'] {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
   }
 
   .icon {

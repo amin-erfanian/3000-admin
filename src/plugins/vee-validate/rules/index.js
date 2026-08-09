@@ -126,6 +126,15 @@ const numberReceipt = (value) => {
   return regex.test(value) ? true : 'کاراکترهای مجاز - / .';
 };
 
+// URL-style slug: lowercase english letters, digits and hyphens (kebab-case)
+const slug = (value) => {
+  if (!value) return true;
+  return (
+    /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value) ||
+    'اسلاگ فقط باید شامل حروف کوچک انگلیسی، اعداد و خط تیره (-) باشد'
+  );
+};
+
 export default {
   persianCharacter,
   nationalCode,
@@ -139,4 +148,5 @@ export default {
   numberReceipt,
   determineFileUploadMode,
   customMin,
+  slug,
 };

@@ -9,19 +9,19 @@ export async function getCategory(id) {
 }
 
 export async function createCategory(data) {
-  return http.post('/categories', data);
+  return http.post('/admin/categories', data);
 }
 
 export async function updateCategory(id, data) {
-  return http.put(`/categories/${id}`, data);
+  return http.put(`/admin/categories/${id}`, data);
 }
 
 export async function replaceCategoryAttributes(id, attributes) {
-  return http.put(`/categories/${id}/attributes`, { attributes });
+  return http.put(`/admin/categories/${id}/attributes`, { attributes });
 }
 
 export async function deleteCategory(id) {
-  return http.delete(`/categories/${id}`);
+  return http.delete(`/admin/categories/${id}`);
 }
 
 export default {
