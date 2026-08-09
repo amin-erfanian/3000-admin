@@ -104,9 +104,9 @@
   const editingCategory = ref(null);
   const parentCategoryId = ref(null);
 
-  const openCreateModal = (parentCategoryId = null, isSubCategory = false) => {
+  const openCreateModal = (parentId = null, isSubCategory = false) => {
     editingCategory.value = null;
-    parentCategoryId.value = isSubCategory ? parentCategoryId : null;
+    parentCategoryId.value = isSubCategory ? parentId : null;
     showModal.value = true;
   };
 
