@@ -9,7 +9,7 @@
             :leave-active-class="onLeaveClasses.active"
             :leave-to-class="onLeaveClasses.to"
           >
-            <component :is="Component" :key="route.fullPath" />
+            <component :is="Component" :key="route.path" />
           </transition>
         </router-view>
       </layout-view>

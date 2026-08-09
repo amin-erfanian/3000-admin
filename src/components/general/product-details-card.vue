@@ -21,14 +21,14 @@
           <div class="product-details-card__field">
             <span class="product-details-card__label">نام فروشنده</span>
             <span class="product-details-card__value">{{
-              product.seller?.title || '—'
+              product.createdBy?.title || '—'
             }}</span>
           </div>
 
           <div class="product-details-card__field">
             <span class="product-details-card__label">کد فروشنده</span>
             <span class="product-details-card__value">{{
-              normalizeValue(product.seller?.code)
+              normalizeValue(product.createdBy?.code)
             }}</span>
           </div>
 

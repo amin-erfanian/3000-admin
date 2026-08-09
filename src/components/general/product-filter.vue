@@ -9,96 +9,72 @@
     </div>
 
     <div class="filter__items">
-      <template v-for="(filterItem, index) in filterItems" :key="index">
-        <!-- BADGE -->
-        <div
-          v-if="filterItem.type === 'badge'"
-          class="filter__badge"
-          :class="{ active: filter[filterItem.key] }"
-          @click="toggleBadge(filterItem.key)"
-        >
-          <p>
-            {{ filterItem.label }}
-          </p>
-        </div>
+      <BaseTextInput
+        v-for="(item, i) in filterItems"
+        :key="i"
+        :placeholder="item.label"
+        v-model="localFilter[item.key]"
+        type="text"
+        variant="outlined"
+      />
+    </div>
 
-        <!-- DROPDOWN -->
-        <BaseDropContent v-else :label="filterItem.label">
-          <FilterDropdownContent
-            :filterItem="filterItem"
-            v-model="filter[filterItem.key]"
-            @change="updateQueryParams"
-          />
-        </BaseDropContent>
-      </template>
+    <div class="filter__actions">
+      <BaseButton size="small" variant="outlined" @click="clearFilters"
+        >پاک کردن فیلترها</BaseButton
+      >
+      <BaseButton size="small" variant="filled" @click="applyFilters"
+        >جستجو</BaseButton
+      >
     </div>
   </div>
 </template>
 
 <script setup>
   import { useRouter, useRoute } from 'vue-router';
-
-  import BaseDropContent from '../common/base/base-drop-content.vue';
+  import { reactive, computed } from 'vue';
   import BaseIcon from '../common/base/base-icon.vue';
-  import FilterDropdownContent from '@/views/products/filter-dropdown-content.vue';
+  import BaseTextInput from '../common/base/base-text-input.vue';
+  import BaseButton from '../common/base/base-button.vue';
 
-  import { computed } from 'vue';
+  const props = defineProps({
+    filterItems: { type: Array, default: () => [] },
+  });
+
+  const emit = defineEmits(['search']);
 
   const router = useRouter();
   const route = useRoute();
 
-  const props = defineProps({
-    filterItems: {
-      type: Array,
-      default: () => [],
-    },
-  });
+  const localFilter = reactive(
+    Object.fromEntries(
+      props.filterItems.map(({ key }) => [key, route.query[key] ?? '']),
+    ),
+  );
 
-  const filter = defineModel({
-    default: {
-      categories: [],
-      brands: [],
-      types: [],
-      statuses: [],
-      colors: [],
-      fake: null,
-      heigh_selling: false,
-      heigh_demand: false,
-      low_stock: false,
-    },
-  });
-
-  function toggleBadge(key) {
-    filter.value[key] = !filter.value[key];
-    updateQueryParams();
-  }
-
-  function updateQueryParams() {
-    const query = {
-      ...route.query,
-    };
-
-    Object.entries(filter.value).forEach(([key, val]) => {
-      if (Array.isArray(val) && val.length) {
-        query[key] = val.join(',');
-      } else if (val === true) {
-        query[key] = 'true';
-      } else {
-        delete query[key];
-      }
+  function applyFilters() {
+    const query = { ...route.query };
+    props.filterItems.forEach(({ key }) => {
+      if (localFilter[key]) query[key] = localFilter[key];
+      else delete query[key];
     });
-
     router.replace({ query });
+    emit('search', { ...query });
   }
 
-  const hasActiveFilters = computed(() => {
-    return Object.values(filter.value).some((val) => {
-      if (Array.isArray(val)) return val.length > 0;
-      if (typeof val === 'boolean') return val === true;
-      if (val !== null && val !== undefined && val !== '') return true;
-      return false;
+  function clearFilters() {
+    const query = { ...route.query };
+    props.filterItems.forEach(({ key }) => {
+      localFilter[key] = '';
+      delete query[key];
     });
-  });
+    router.replace({ query });
+    emit('search', { ...query });
+  }
+
+  const hasActiveFilters = computed(() =>
+    props.filterItems.some(({ key }) => !!route.query[key]),
+  );
 </script>
 
 <style scoped lang="scss">
@@ -121,23 +97,10 @@
       gap: 12px;
     }
 
-    &__badge {
-      border: 1px solid var(--palette-border-10);
-      padding: space(0.5) space(2);
-      border-radius: 6px;
-      background: transparent;
-      cursor: pointer;
-
-      p {
-        color: var(--palette-text-on-main-10);
-        @include typography(body-small);
-        white-space: nowrap;
-      }
-
-      &.active {
-        background: var(--palette-primary);
-        color: white;
-      }
+    &__actions {
+      display: flex;
+      gap: space(2);
+      margin-inline-start: auto;
     }
   }
 </style>

@@ -13,7 +13,10 @@
     </div>
 
     <div class="product-list__filter">
-      <ProductFilter v-model="filter" :filterItems="FILTER_ITEMS" />
+      <ProductFilter
+        :filterItems="PRODUCT_FILTER_ITEMS"
+        @search="handleFilterSearch"
+      />
     </div>
 
     <div class="product-list__content">
@@ -51,126 +54,66 @@
 </template>
 
 <script setup>
-  import { ref, watch, computed, onMounted } from 'vue';
-  import { usePromise } from '@/composables';
-
+  import { ref, onMounted, computed } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
-
+  import { usePromise } from '@/composables';
+  import {
+    getProductList,
+    approveProduct,
+    rejectProduct,
+  } from '@/services/product.service';
+  import { PRODUCT_FILTER_ITEMS } from '@/constants/filters';
   import Search from '@/components/general/search.vue';
   import ProductFilter from '@/components/general/product-filter.vue';
   import BasePagination from '@/components/common/base/base-pagination.vue';
   import BaseSkeleton from '@/components/common/base/base-skeleton.vue';
   import ProductDetailsCard from '@/components/general/product-details-card.vue';
 
-  import {
-    getProductList,
-    approveProduct,
-    rejectProduct,
-  } from '@/services/product.service';
-  import { FILTER_ITEMS } from '@/constants/filters';
-
   const router = useRouter();
   const route = useRoute();
 
-  const searchQuery = ref('');
-
-  const filter = ref({
-    categories: [],
-    brands: [],
-    types: [],
-    statuses: [],
-    colors: [],
-    fake: null,
-    heigh_selling: false,
-    heigh_demand: false,
-    low_stock: false,
-    keyword: '',
-  });
+  const searchQuery = ref(route.query.keyword ?? '');
 
   const { data: productList, loading, execute } = usePromise(getProductList);
   const { execute: approveExecute } = usePromise(approveProduct);
   const { execute: rejectExecute } = usePromise(rejectProduct);
 
-  function parseQueryToFilter(query) {
-    const parsed = { ...filter.value };
-
-    Object.keys(parsed).forEach((key) => {
-      if (!(key in query)) return;
-
-      const value = query[key];
-
-      if (Array.isArray(parsed[key])) {
-        parsed[key] = typeof value === 'string' ? value.split(',') : [];
-      } else if (typeof parsed[key] === 'boolean') {
-        parsed[key] = value === 'true';
-      } else {
-        parsed[key] = value;
-      }
-    });
-
-    filter.value = parsed;
-    searchQuery.value = query.keyword ?? '';
-  }
-
-  onMounted(() => {
-    parseQueryToFilter(route.query);
-    searchQuery.value = route.query.keyword ?? '';
-  });
+  onMounted(() => execute({ ...route.query }));
 
   function applySearch() {
-    router.replace({
-      query: {
-        ...route.query,
-        keyword: searchQuery.value || undefined,
-        page: 1,
-      },
-    });
+    const query = {
+      ...route.query,
+      ...(searchQuery.value
+        ? { keyword: searchQuery.value }
+        : { keyword: undefined }),
+      page: 1,
+    };
+    router.replace({ query });
+    execute(query);
   }
 
-  watch(
-    () => route.query,
-    async (newQuery) => {
-      parseQueryToFilter(newQuery);
+  function handleFilterSearch(params) {
+    execute(params);
+  }
 
-      await execute({
-        ...newQuery,
-        keyword: searchQuery.value,
-      });
-    },
-    { immediate: true },
-  );
+  function goToPage(page) {
+    const query = { ...route.query, page: String(page) };
+    router.replace({ query });
+    execute(query);
+  }
 
   const items = computed(() => productList.value?.items ?? []);
   const pager = computed(() => productList.value?.pager ?? null);
 
-  function goToPage(page) {
-    router.replace({
-      query: {
-        ...route.query,
-        page: String(page),
-      },
-    });
+  async function handleApprove({ productId }) {
+    await approveExecute(productId);
+    execute({ ...route.query });
   }
 
-  const refetchProducts = async () => {
-    await execute({
-      ...route.query,
-      keyword: searchQuery.value,
-    });
-  };
-
-  const handleApprove = async ({ productId }) => {
-    await approveExecute(productId);
-    await refetchProducts();
-  };
-
-  const handleReject = async ({ productId, reason, propertyKeys }) => {
-    await rejectExecute(productId, {
-      reason,
-      propertyKeys,
-    });
-    await refetchProducts();
-  };
+  async function handleReject({ productId, reason, propertyKeys }) {
+    await rejectExecute(productId, { reason, propertyKeys });
+    execute({ ...route.query });
+  }
 </script>
 
 <style lang="scss" scoped>
