@@ -42,7 +42,7 @@ const ROUTES = [
   {
     name: 'category-edit',
     path: '/categories/:id/edit',
-    component: () => import('@/views/categories/edit.vue'),
+    component: () => import('@/views/categories/EditProperties.vue'),
     meta: {
       layout: 'main',
       title: 'ویرایش دسته‌بندی',

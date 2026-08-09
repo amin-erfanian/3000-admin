@@ -135,6 +135,24 @@ const slug = (value) => {
   );
 };
 
+// Attribute key: lowercase english letters, digits and underscore only
+const attrKey = (value) => {
+  if (!value) return true;
+  return (
+    /^[a-z0-9_]+$/.test(value) ||
+    'کلید فقط می‌تواند شامل حروف کوچک انگلیسی، عدد و زیرخط باشد'
+  );
+};
+
+// Persian or english letters, digits and spaces (used for placeholders)
+const persianOrEnglish = (value) => {
+  if (!value) return true;
+  return (
+    /^[؀-ۿa-zA-Z0-9\s]+$/.test(value) ||
+    'فقط حروف فارسی یا انگلیسی و عدد مجاز است'
+  );
+};
+
 export default {
   persianCharacter,
   nationalCode,
@@ -149,4 +167,6 @@ export default {
   determineFileUploadMode,
   customMin,
   slug,
+  attrKey,
+  persianOrEnglish,
 };

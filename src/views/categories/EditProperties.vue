@@ -39,6 +39,7 @@
           <div class="table-row table-head">
             <div class="col col-key">کلید (انگلیسی)</div>
             <div class="col col-label">عنوان (فارسی)</div>
+            <div class="col col-placeholder">پلیس‌هولدر (فارسی)</div>
             <div class="col col-type">نوع</div>
             <div class="col col-required">وضعیت</div>
             <div class="col col-actions"></div>
@@ -54,6 +55,9 @@
             </div>
             <div class="col col-label" data-label="برچسب">
               <span>{{ attr.label }}</span>
+            </div>
+            <div class="col col-placeholder" data-label="پلیس‌هولدر">
+              <span>{{ attr.placeholder || '—' }}</span>
             </div>
             <div class="col col-type" data-label="نوع">
               <span class="badge">{{ typeLabel(attr.type) }}</span>
@@ -80,38 +84,50 @@
           <!-- Inline new attribute row -->
           <div v-if="showNewRow" class="table-row table-new">
             <div class="col col-key" data-label="کلید">
-              <input
-                v-model="newAttribute.key"
-                type="text"
-                placeholder="کلید یکتای ذخیره سازی"
-                @input="normalizeKey"
-              />
+              <div class="field-cell">
+                <input
+                  v-model="newKey"
+                  type="text"
+                  placeholder="کلید یکتای ذخیره سازی"
+                  @input="normalizeKey"
+                />
+                <span v-if="keyError" class="field-error">{{ keyError }}</span>
+              </div>
             </div>
             <div class="col col-label" data-label="برچسب">
-              <input
-                v-model="newAttribute.label"
-                type="text"
-                placeholder="عنوان نمایشی"
-              />
+              <div class="field-cell">
+                <input
+                  v-model="newLabel"
+                  type="text"
+                  placeholder="عنوان نمایشی"
+                />
+                <span v-if="labelError" class="field-error">{{
+                  labelError
+                }}</span>
+              </div>
+            </div>
+            <div class="col col-placeholder" data-label="پلیس‌هولدر">
+              <div class="field-cell">
+                <input
+                  v-model="newPlaceholder"
+                  type="text"
+                  placeholder="مثال: مقدار را وارد کنید"
+                />
+                <span v-if="placeholderError" class="field-error">{{
+                  placeholderError
+                }}</span>
+              </div>
             </div>
             <div class="col col-type" data-label="نوع">
               <span class="badge">متن</span>
             </div>
             <div class="col col-required" data-label="وضعیت">
               <label class="radio">
-                <input
-                  v-model="newAttribute.required"
-                  type="radio"
-                  :value="true"
-                />
+                <input v-model="newRequired" type="radio" :value="true" />
                 الزامی
               </label>
               <label class="radio">
-                <input
-                  v-model="newAttribute.required"
-                  type="radio"
-                  :value="false"
-                />
+                <input v-model="newRequired" type="radio" :value="false" />
                 اختیاری
               </label>
             </div>
@@ -142,6 +158,7 @@
 <script setup>
   import { ref, onMounted } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
+  import { useForm, useField } from 'vee-validate';
   import { toast } from 'vue3-toastify';
   import BaseIcon from '@/components/common/base/base-icon.vue';
   import BaseTooltip from '@/components/common/base/base-tooltip.vue';
@@ -164,22 +181,30 @@
   // Local working copy of attributes
   const attributes = ref([]);
 
-  // New attribute inline form
+  // New attribute inline form (validated with vee-validate)
   const showNewRow = ref(false);
   const newRowError = ref(null);
-  const newAttribute = ref({
-    key: '',
-    label: '',
-    type: 'text',
-    required: true,
-  });
+  const newRequired = ref(true);
+
+  const { handleSubmit, resetForm } = useForm();
+  const { value: newKey, errorMessage: keyError } = useField(
+    'key',
+    'required|attrKey',
+    { label: 'کلید' },
+  );
+  const { value: newLabel, errorMessage: labelError } = useField(
+    'label',
+    'required|persianCharacter',
+    { label: 'برچسب' },
+  );
+  const { value: newPlaceholder, errorMessage: placeholderError } = useField(
+    'placeholder',
+    'persianOrEnglish',
+    { label: 'پلیس‌هولدر' },
+  );
 
   const saving = ref(false);
   const saveError = ref(null);
-
-  const PERSIAN_LETTER = /[؀-ۿ]/;
-  const LATIN_LETTER = /[a-zA-Z]/;
-  const KEY_PATTERN = /^[a-z0-9_-]+$/;
 
   const typeLabel = (type) => {
     switch (type) {
@@ -191,71 +216,44 @@
   };
 
   const normalizeKey = () => {
-    newAttribute.value.key = newAttribute.value.key
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, '_');
+    newKey.value = newKey.value.trim().toLowerCase().replace(/\s+/g, '_');
+  };
+
+  const resetNewRow = () => {
+    resetForm({ values: { key: '', label: '', placeholder: '' } });
+    newRequired.value = true;
+    newRowError.value = null;
   };
 
   const openNewRow = () => {
-    newAttribute.value = {
-      key: '',
-      label: '',
-      type: 'text',
-      required: true,
-    };
-    newRowError.value = null;
+    resetNewRow();
     showNewRow.value = true;
   };
 
   const cancelNewRow = () => {
     showNewRow.value = false;
-    newRowError.value = null;
+    resetNewRow();
   };
 
-  const validateNewAttribute = () => {
-    const key = newAttribute.value.key.trim();
-    const label = newAttribute.value.label.trim();
-
-    if (!key) {
-      return 'کلید ویژگی الزامی است.';
-    }
-
-    if (!KEY_PATTERN.test(key)) {
-      return 'کلید فقط می‌تواند شامل حروف کوچک انگلیسی، عدد، خط تیره و زیرخط باشد.';
-    }
+  const addAttribute = handleSubmit((values) => {
+    const key = values.key.trim();
 
     if (attributes.value.some((attr) => attr.key === key)) {
-      return 'این کلید قبلاً ثبت شده است؛ کلید تکراری مجاز نیست.';
-    }
-
-    if (!label) {
-      return 'برچسب ویژگی الزامی است.';
-    }
-
-    if (!PERSIAN_LETTER.test(label) || LATIN_LETTER.test(label)) {
-      return 'برچسب باید به فارسی وارد شود.';
-    }
-
-    return null;
-  };
-
-  const addAttribute = () => {
-    const validationError = validateNewAttribute();
-    if (validationError) {
-      newRowError.value = validationError;
+      newRowError.value =
+        'این کلید قبلاً ثبت شده است؛ کلید تکراری مجاز نیست.';
       return;
     }
 
     attributes.value.push({
-      key: newAttribute.value.key.trim(),
-      label: newAttribute.value.label.trim(),
+      key,
+      label: values.label.trim(),
+      placeholder: values.placeholder?.trim() || '',
       type: 'text',
-      required: newAttribute.value.required,
+      required: newRequired.value,
     });
 
     cancelNewRow();
-  };
+  });
 
   const removeAttribute = (index) => {
     attributes.value.splice(index, 1);
@@ -273,6 +271,7 @@
       attributes.value = (updated?.attributes || []).map((attr) => ({
         key: attr.key,
         label: attr.label,
+        placeholder: attr.placeholder || '',
         type: attr.type || 'text',
         required: !!attr.required,
       }));
@@ -294,6 +293,7 @@
       attributes.value = (category.value.attributes || []).map((attr) => ({
         key: attr.key,
         label: attr.label,
+        placeholder: attr.placeholder || '',
         type: attr.type || 'text',
         required: !!attr.required,
       }));
@@ -389,7 +389,7 @@
 
   .table-row {
     display: grid;
-    grid-template-columns: 1.2fr 1.4fr 0.8fr 1.4fr auto;
+    grid-template-columns: 1.1fr 1.3fr 1.3fr 0.7fr 1.3fr auto;
     gap: 12px;
     align-items: center;
     padding: 12px;
@@ -419,8 +419,22 @@
   }
 
   .col-key,
-  .col-label {
+  .col-label,
+  .col-placeholder {
     flex-wrap: wrap;
+  }
+
+  .field-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+  }
+
+  .field-error {
+    font-size: 11px;
+    color: var(--palette-error);
+    line-height: 1.4;
   }
 
   .value-mono {

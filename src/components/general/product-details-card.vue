@@ -55,9 +55,9 @@
 
           <div class="product-details-card__field">
             <span class="product-details-card__label">کمیسیون</span>
-            <span class="product-details-card__value">{{
-              normalizeValue(product.commission)
-            }}</span>
+            <span class="product-details-card__value">
+              {{ normalizeValue(product.category.commission) }}%
+            </span>
           </div>
 
           <div class="product-details-card__field">
