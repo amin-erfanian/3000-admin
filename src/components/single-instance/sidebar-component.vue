@@ -56,9 +56,9 @@
       link: '/brands',
     },
     {
-      label: 'سفارشات',
-      icon: 'order',
-      // link: '/order',
+      label: 'هزینه پردازش',
+      icon: 'process',
+      link: '/process',
     },
     {
       label: 'فروشندگان',

@@ -153,6 +153,18 @@ const persianOrEnglish = (value) => {
   );
 };
 
+// Current field value must be greater than or equal to another field's value.
+// Pass the other field's name prefixed with `@` (e.g. `minFieldValue:@width-from`).
+// Used for range pairs where the "to" value must not be smaller than "from".
+const minFieldValue = (value, [target]) => {
+  if (value === '' || value === undefined || value === null) return true;
+  if (target === '' || target === undefined || target === null) return true;
+  return (
+    Number(value) >= Number(target) ||
+    'مقدار وارد شده باید بزرگ‌تر یا مساوی مقدار مبدا باشد'
+  );
+};
+
 export default {
   persianCharacter,
   nationalCode,
@@ -169,4 +181,5 @@ export default {
   slug,
   attrKey,
   persianOrEnglish,
+  minFieldValue,
 };

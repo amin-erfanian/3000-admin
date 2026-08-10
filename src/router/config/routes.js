@@ -59,6 +59,16 @@ const ROUTES = [
       authRequired: true,
     },
   },
+  {
+    name: 'process',
+    path: '/process',
+    component: () => import('@/views/process/index.vue'),
+    meta: {
+      layout: 'main',
+      title: 'مدیریت برندها',
+      authRequired: true,
+    },
+  },
   // {
   //   name: 'orders',
   //   path: '/orders',
