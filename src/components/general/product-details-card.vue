@@ -33,6 +33,13 @@
           </div>
 
           <div class="product-details-card__field">
+            <span class="product-details-card__label">کد کالا</span>
+            <span class="product-details-card__value">{{
+              product.code || '—'
+            }}</span>
+          </div>
+
+          <div class="product-details-card__field">
             <span class="product-details-card__label">برند</span>
             <span class="product-details-card__value">{{
               product.brand?.titleFa || '—'
