@@ -76,6 +76,7 @@
                   iconName="trash-bin"
                   @click="removeAttribute(index)"
                   class="btn-icon delete"
+                  :style="removing ? 'opacity: 0.5; pointer-events: none;' : ''"
                 />
               </BaseTooltip>
             </div>
@@ -162,8 +163,8 @@
               </label>
             </div>
             <div class="col col-actions">
-              <button @click="addAttribute" class="btn-primary btn-sm">
-                افزودن
+              <button @click="addAttribute" :disabled="creating" class="btn-primary btn-sm">
+                {{ creating ? 'در حال افزودن...' : 'افزودن' }}
               </button>
               <button @click="cancelNewRow" class="btn-secondary btn-sm">
                 انصراف
@@ -172,11 +173,17 @@
           </div>
 
           <div v-if="newRowError" class="row-error">{{ newRowError }}</div>
+          <div v-if="createError" class="row-error">
+            {{ errorMessage(createError) }}
+          </div>
+          <div v-if="removeError" class="row-error">
+            {{ errorMessage(removeError) }}
+          </div>
         </div>
       </div>
 
       <div class="footer">
-        <div v-if="saveError" class="error">{{ saveError }}</div>
+        <div v-if="saveError" class="error">{{ errorMessage(saveError) }}</div>
         <button @click="save" :disabled="saving" class="btn-primary">
           {{ saving ? 'در حال ذخیره...' : 'ذخیره تغییرات' }}
         </button>
@@ -193,11 +200,13 @@
   import BaseIcon from '@/components/common/base/base-icon.vue';
   import BaseTooltip from '@/components/common/base/base-tooltip.vue';
   import { usePromise } from '@/composables';
+  import { getCategory } from '@/services/category.service';
   import {
-    getCategory,
-    replaceCategoryAttributes,
-  } from '@/services/category.service';
-  import { getAttributes } from '@/services/attribute.service';
+    getAttributes,
+    createAttribute,
+    attachCategoryAttributes,
+    removeCategoryAttribute,
+  } from '@/services/attribute.service';
 
   const route = useRoute();
   const router = useRouter();
@@ -216,6 +225,33 @@
     error: attributesError,
     execute: fetchAttributes,
   } = usePromise(getAttributes);
+
+  // Create attribute in the global catalog (POST /admin/attributes)
+  const {
+    loading: creating,
+    error: createError,
+    execute: createAttributePromise,
+  } = usePromise(createAttribute);
+
+  // Attach attributes to this category (POST /category/:categoryId)
+  const {
+    loading: saving,
+    error: saveError,
+    execute: saveAttributes,
+  } = usePromise(attachCategoryAttributes);
+
+  // Remove an attribute from this category (DELETE /category/:categoryId/:attributeId)
+  const {
+    loading: removing,
+    error: removeError,
+    execute: detachAttribute,
+  } = usePromise(removeCategoryAttribute);
+
+  const errorMessage = (err) =>
+    err?.data?.message?.fa ||
+    err?.response?.data?.message?.fa ||
+    err?.message ||
+    '';
 
   // Local working copy of attributes
   const attributes = ref([]);
@@ -244,9 +280,6 @@
     'persianOrEnglish',
     { label: 'پلیس‌هولدر' },
   );
-
-  const saving = ref(false);
-  const saveError = ref(null);
 
   const typeLabel = (type) => {
     switch (type) {
@@ -296,6 +329,7 @@
     // Commit immediately — selecting from the list counts as already added.
     if (!attributes.value.some((existing) => existing.key === attr.key)) {
       attributes.value.push({
+        _id: attr._id,
         key: attr.key,
         label: attr.label,
         placeholder: attr.placeholder || '',
@@ -326,7 +360,7 @@
     resetNewRow();
   };
 
-  const addAttribute = handleSubmit((values) => {
+  const addAttribute = handleSubmit(async (values) => {
     const key = values.key.trim();
 
     if (attributes.value.some((attr) => attr.key === key)) {
@@ -334,7 +368,8 @@
       return;
     }
 
-    attributes.value.push({
+    // Create the attribute in the global catalog right away and keep its id.
+    const created = await createAttributePromise({
       key,
       label: values.label.trim(),
       placeholder: values.placeholder?.trim() || '',
@@ -342,35 +377,53 @@
       required: newRequired.value,
     });
 
+    if (!created) return; // error handled by usePromise
+
+    attributes.value.push({
+      _id: created._id,
+      key: created.key,
+      label: created.label,
+      placeholder: created.placeholder || '',
+      type: created.type || 'text',
+      required: !!created.required,
+    });
+
     cancelNewRow();
   });
 
-  const removeAttribute = (index) => {
+  const removeAttribute = async (index) => {
+    const attr = attributes.value[index];
+    if (!attr) return;
+
+    // Attributes without an id only exist locally — just drop them.
+    if (!attr._id) {
+      attributes.value.splice(index, 1);
+      return;
+    }
+
+    const removed = await detachAttribute(route.params.id, attr._id);
+    if (!removed) return; // error handled by usePromise
+
     attributes.value.splice(index, 1);
   };
 
   const save = async () => {
-    saveError.value = null;
-    saving.value = true;
+    const attributeIds = attributes.value
+      .map((attr) => attr._id)
+      .filter(Boolean);
 
-    try {
-      const updated = await replaceCategoryAttributes(
-        route.params.id,
-        attributes.value,
-      );
-      attributes.value = (updated?.attributes || []).map((attr) => ({
-        key: attr.key,
-        label: attr.label,
-        placeholder: attr.placeholder || '',
-        type: attr.type || 'text',
-        required: !!attr.required,
-      }));
-      toast.success('ویژگی‌های دسته‌بندی با موفقیت ذخیره شد.');
-    } catch (err) {
-      saveError.value = err.response?.data?.message?.fa || err.message;
-    } finally {
-      saving.value = false;
-    }
+    const updated = await saveAttributes(route.params.id, attributeIds);
+    if (!updated) return; // error handled by usePromise
+
+    attributes.value = (updated?.attributes || []).map((attr) => ({
+      _id: attr._id,
+      key: attr.key,
+      label: attr.label,
+      placeholder: attr.placeholder || '',
+      type: attr.type || 'text',
+      required: !!attr.required,
+    }));
+    toast.success('ویژگی‌های دسته‌بندی با موفقیت ذخیره شد.');
   };
 
   const goBack = () => {
@@ -382,6 +435,7 @@
     fetchCategory(route.params.id).then(() => {
       if (category.value) {
         attributes.value = (category.value.attributes || []).map((attr) => ({
+          _id: attr._id,
           key: attr.key,
           label: attr.label,
           placeholder: attr.placeholder || '',
