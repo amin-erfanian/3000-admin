@@ -78,10 +78,7 @@
   import CategoryTreeItem from './CategoryTreeItem.vue';
   import CategoryFormModal from './CategoryFormModal.vue';
   import { usePromise } from '@/composables';
-  import {
-    deleteCategory,
-    getCategoryTree,
-  } from '@/services/category.service';
+  import { deleteCategory, getCategoryTree } from '@/services/category.service';
 
   const router = useRouter();
 
@@ -170,7 +167,7 @@
   // Navigate to category attributes (edit) page
   const goToAttributes = (category) => {
     router.push({
-      name: 'category-edit',
+      name: 'category-attributes',
       params: { id: category._id },
     });
   };

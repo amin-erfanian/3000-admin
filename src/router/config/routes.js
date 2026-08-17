@@ -40,12 +40,12 @@ const ROUTES = [
     },
   },
   {
-    name: 'category-edit',
-    path: '/categories/:id/edit',
-    component: () => import('@/views/categories/EditProperties.vue'),
+    name: 'category-attributes',
+    path: '/categories/:id/attributes',
+    component: () => import('@/views/categories/EditAttributes.vue'),
     meta: {
       layout: 'main',
-      title: 'ویرایش دسته‌بندی',
+      title: 'ویرایش ویژگی‌ها',
       authRequired: true,
     },
   },

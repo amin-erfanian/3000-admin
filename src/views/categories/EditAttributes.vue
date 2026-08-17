@@ -1,5 +1,5 @@
 <template>
-  <div class="category-edit">
+  <div class="category-attributes">
     <div class="header">
       <button @click="goBack" class="btn-back">
         <BaseIcon iconName="arrow-right" class="back-icon" />
@@ -84,13 +84,43 @@
           <!-- Inline new attribute row -->
           <div v-if="showNewRow" class="table-row table-new">
             <div class="col col-key" data-label="کلید">
-              <div class="field-cell">
+              <div class="field-cell autocomplete">
                 <input
                   v-model="newKey"
                   type="text"
                   placeholder="کلید یکتای ذخیره سازی"
                   @input="normalizeKey"
+                  @focus="openKeyDropdown"
+                  @blur="closeKeyDropdown"
+                  @keydown.escape="closeKeyDropdown"
                 />
+                <div v-if="showKeyDropdown" class="autocomplete-list">
+                  <div
+                    v-if="attributesLoading"
+                    class="autocomplete-empty"
+                  >
+                    در حال بارگذاری ویژگی‌ها...
+                  </div>
+                  <div v-else-if="attributesError" class="autocomplete-empty">
+                    خطا در بارگذاری ویژگی‌ها
+                  </div>
+                  <div
+                    v-else-if="!keySuggestions.length"
+                    class="autocomplete-empty"
+                  >
+                    ویژگی‌ای یافت نشد. کلید را دستی وارد کنید.
+                  </div>
+                  <div
+                    v-for="attr in keySuggestions"
+                    v-else
+                    :key="attr.key"
+                    class="autocomplete-option"
+                    @mousedown.prevent="selectAttribute(attr)"
+                  >
+                    <span class="option-key">{{ attr.key }}</span>
+                    <span class="option-label">{{ attr.label }}</span>
+                  </div>
+                </div>
                 <span v-if="keyError" class="field-error">{{ keyError }}</span>
               </div>
             </div>
@@ -156,7 +186,7 @@
 </template>
 
 <script setup>
-  import { ref, onMounted } from 'vue';
+  import { ref, computed, onMounted } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
   import { useForm, useField } from 'vee-validate';
   import { toast } from 'vue3-toastify';
@@ -167,6 +197,7 @@
     getCategory,
     replaceCategoryAttributes,
   } from '@/services/category.service';
+  import { getAttributes } from '@/services/attribute.service';
 
   const route = useRoute();
   const router = useRouter();
@@ -178,6 +209,14 @@
     execute: fetchCategory,
   } = usePromise(getCategory);
 
+  // All available attributes (for the key autocomplete)
+  const {
+    data: allAttributes,
+    loading: attributesLoading,
+    error: attributesError,
+    execute: fetchAttributes,
+  } = usePromise(getAttributes);
+
   // Local working copy of attributes
   const attributes = ref([]);
 
@@ -185,6 +224,9 @@
   const showNewRow = ref(false);
   const newRowError = ref(null);
   const newRequired = ref(true);
+
+  // Key autocomplete state
+  const showKeyDropdown = ref(false);
 
   const { handleSubmit, resetForm } = useForm();
   const { value: newKey, errorMessage: keyError } = useField(
@@ -219,10 +261,59 @@
     newKey.value = newKey.value.trim().toLowerCase().replace(/\s+/g, '_');
   };
 
+  // Suggestions for the key autocomplete, filtered by the current input
+  // and excluding keys already added to this category.
+  const keySuggestions = computed(() => {
+    const list = allAttributes.value || [];
+    const query = (newKey.value || '').trim().toLowerCase();
+    const usedKeys = new Set(attributes.value.map((attr) => attr.key));
+
+    const available = list.filter((attr) => !usedKeys.has(attr.key));
+
+    if (!query) return available;
+
+    return available.filter((attr) => {
+      return (
+        attr.key.toLowerCase().includes(query) ||
+        (attr.label || '').toLowerCase().includes(query)
+      );
+    });
+  });
+
+  const openKeyDropdown = () => {
+    // Load the attribute catalog lazily on first focus
+    if (!allAttributes.value && !attributesLoading.value) {
+      fetchAttributes();
+    }
+    showKeyDropdown.value = true;
+  };
+
+  const closeKeyDropdown = () => {
+    showKeyDropdown.value = false;
+  };
+
+  const selectAttribute = (attr) => {
+    // Commit immediately — selecting from the list counts as already added.
+    if (!attributes.value.some((existing) => existing.key === attr.key)) {
+      attributes.value.push({
+        key: attr.key,
+        label: attr.label,
+        placeholder: attr.placeholder || '',
+        type: attr.type || 'text',
+        required: !!attr.required,
+      });
+    }
+
+    // Close the adding row — it only reopens fresh when the user clicks
+    // «افزودن ویژگی» again.
+    cancelNewRow();
+  };
+
   const resetNewRow = () => {
     resetForm({ values: { key: '', label: '', placeholder: '' } });
     newRequired.value = true;
     newRowError.value = null;
+    showKeyDropdown.value = false;
   };
 
   const openNewRow = () => {
@@ -239,8 +330,7 @@
     const key = values.key.trim();
 
     if (attributes.value.some((attr) => attr.key === key)) {
-      newRowError.value =
-        'این کلید قبلاً ثبت شده است؛ کلید تکراری مجاز نیست.';
+      newRowError.value = 'این کلید قبلاً ثبت شده است؛ کلید تکراری مجاز نیست.';
       return;
     }
 
@@ -287,22 +377,24 @@
     router.push({ name: 'categories' });
   };
 
-  onMounted(async () => {
-    await fetchCategory(route.params.id);
-    if (category.value) {
-      attributes.value = (category.value.attributes || []).map((attr) => ({
-        key: attr.key,
-        label: attr.label,
-        placeholder: attr.placeholder || '',
-        type: attr.type || 'text',
-        required: !!attr.required,
-      }));
-    }
+  onMounted(() => {
+    fetchAttributes();
+    fetchCategory(route.params.id).then(() => {
+      if (category.value) {
+        attributes.value = (category.value.attributes || []).map((attr) => ({
+          key: attr.key,
+          label: attr.label,
+          placeholder: attr.placeholder || '',
+          type: attr.type || 'text',
+          required: !!attr.required,
+        }));
+      }
+    });
   });
 </script>
 
 <style scoped>
-  .category-edit {
+  .category-attributes {
     padding: 24px;
     max-width: 1100px;
     margin: 0 auto;
@@ -435,6 +527,63 @@
     font-size: 11px;
     color: var(--palette-error);
     line-height: 1.4;
+  }
+
+  .autocomplete {
+    position: relative;
+  }
+
+  .autocomplete-list {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    left: auto;
+    z-index: 30;
+    margin-top: 4px;
+    min-width: 100%;
+    width: 520px;
+    max-width: calc(100vw - 48px);
+    background: white;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    max-height: 260px;
+    overflow-y: auto;
+  }
+
+  .autocomplete-empty {
+    padding: 12px 14px;
+    font-size: 12px;
+    color: #6b7280;
+  }
+
+  .autocomplete-option {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.15s;
+  }
+
+  .autocomplete-option:hover {
+    background: #f3f4f6;
+  }
+
+  .option-key {
+    font-family: monospace;
+    font-size: 13px;
+    color: #374151;
+  }
+
+  .option-label {
+    font-size: 12px;
+    color: #6b7280;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .value-mono {
@@ -628,7 +777,7 @@
   }
 
   @media (max-width: 460px) {
-    .category-edit {
+    .category-attributes {
       padding: 16px;
     }
 
