@@ -1,7 +1,10 @@
 <template>
   <div class="field-wrapper">
     <BaseLabel :label="label" :required="required" />
-    <div class="field-wrapper__field field" :class="[fieldVariant, hasError]">
+    <div
+      class="field-wrapper__field field"
+      :class="[fieldVariant, fieldSize, hasError]"
+    >
       <slot name="prepend">
         <base-icon
           v-if="prependIcon"
@@ -77,6 +80,11 @@
       default: 'text',
       validator: (value) => ['outlined', 'text'].includes(value),
     },
+    size: {
+      type: String,
+      default: 'small',
+      validator: (value) => ['x-small', 'small', 'medium'].includes(value),
+    },
     modelValue: {
       type: String,
       default: '',
@@ -126,6 +134,7 @@
   }
 
   const fieldVariant = computed(() => `field--${props.variant}`);
+  const fieldSize = computed(() => `field--${props.size}`);
 
   const convertPersianToEnglishDigits = (str) => {
     const persianDigits = '۰۱۲۳۴۵۶۷۸۹';
@@ -190,6 +199,22 @@
 
       &--has-error {
         --border-color: var(--palette-error);
+      }
+
+      &--x-small {
+        min-height: 32px;
+        padding: space(0.5) space(2);
+        gap: space(1.5);
+
+        .field__input {
+          @include typography(body-small);
+        }
+      }
+
+      &--small {
+        min-height: 40px;
+        padding: space(1) space(3);
+        gap: space(2);
       }
 
       &--text {

@@ -91,6 +91,7 @@
       min-height: 32px;
       padding: 0 space(4);
       border-radius: $radius-2x;
+      @include typography(body-small);
     }
 
     &--size-small {

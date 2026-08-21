@@ -61,6 +61,12 @@
             </div>
             <div class="col col-type" data-label="نوع">
               <span class="badge">{{ typeLabel(attr.type) }}</span>
+              <span
+                v-if="attr.type === 'select' && attr.options?.length"
+                class="options-count"
+              >
+                ({{ attr.options.length }} گزینه)
+              </span>
             </div>
             <div class="col col-required" data-label="وضعیت">
               <span
@@ -80,6 +86,23 @@
                 />
               </BaseTooltip>
             </div>
+
+            <!-- Options of a select-type attribute, shown below the main row -->
+            <div
+              v-if="attr.type === 'select' && attr.options?.length"
+              class="attribute-options"
+            >
+              <div class="attribute-options-title">گزینه‌ها:</div>
+              <div class="attribute-options-list">
+                <span
+                  v-for="option in attr.options"
+                  :key="option"
+                  class="attribute-option-badge"
+                >
+                  {{ option }}
+                </span>
+              </div>
+            </div>
           </div>
 
           <!-- Inline new attribute row -->
@@ -96,10 +119,7 @@
                   @keydown.escape="closeKeyDropdown"
                 />
                 <div v-if="showKeyDropdown" class="autocomplete-list">
-                  <div
-                    v-if="attributesLoading"
-                    class="autocomplete-empty"
-                  >
+                  <div v-if="attributesLoading" class="autocomplete-empty">
                     در حال بارگذاری ویژگی‌ها...
                   </div>
                   <div v-else-if="attributesError" class="autocomplete-empty">
@@ -150,7 +170,13 @@
               </div>
             </div>
             <div class="col col-type" data-label="نوع">
-              <span class="badge">متن</span>
+              <select v-model="newType" class="type-select">
+                <option value="text">متن</option>
+                <option value="select">گزینش</option>
+              </select>
+              <span v-if="optionsError" class="field-error">{{
+                optionsError
+              }}</span>
             </div>
             <div class="col col-required" data-label="وضعیت">
               <label class="radio">
@@ -163,12 +189,63 @@
               </label>
             </div>
             <div class="col col-actions">
-              <button @click="addAttribute" :disabled="creating" class="btn-primary btn-sm">
+              <button
+                @click="addAttribute"
+                :disabled="creating"
+                class="btn-primary btn-sm"
+              >
                 {{ creating ? 'در حال افزودن...' : 'افزودن' }}
               </button>
               <button @click="cancelNewRow" class="btn-secondary btn-sm">
                 انصراف
               </button>
+            </div>
+
+            <!-- Options editor for select-type attributes -->
+            <div v-if="newType === 'select'" class="options-row">
+              <div class="options-title">گزینه‌ها</div>
+              <div class="options-list">
+                <div
+                  v-for="(option, index) in newOptions"
+                  :key="index"
+                  class="option-item"
+                >
+                  <div class="field-cell">
+                    <input
+                      v-model="newOptions[index]"
+                      type="text"
+                      placeholder="مقدار گزینه"
+                      @blur="touchOption(index)"
+                    />
+                    <span
+                      v-if="isOptionTouched(index) && !isOptionValid(index)"
+                      class="field-error"
+                    >
+                      مقدار گزینه الزامی است.
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    class="btn-option-remove"
+                    @click="removeOption(index)"
+                  >
+                    ×
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  class="btn-add-option"
+                  :disabled="!canAddOption"
+                  :title="
+                    canAddOption
+                      ? ''
+                      : 'ابتدا مقدار گزینه‌های فعلی را وارد کنید.'
+                  "
+                  @click="addOption"
+                >
+                  + افزودن گزینه
+                </button>
+              </div>
             </div>
           </div>
 
@@ -193,7 +270,7 @@
 </template>
 
 <script setup>
-  import { ref, computed, onMounted } from 'vue';
+  import { ref, computed, watch, onMounted } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
   import { useForm, useField } from 'vee-validate';
   import { toast } from 'vue3-toastify';
@@ -260,6 +337,32 @@
   const showNewRow = ref(false);
   const newRowError = ref(null);
   const newRequired = ref(true);
+  const newType = ref('text');
+  const newOptions = ref([]);
+  const optionsError = ref(null);
+  const touchedOptions = ref(new Set());
+
+  // Select-type attributes always start with one empty option row.
+  watch(newType, (type) => {
+    if (type === 'select' && !newOptions.value.length) {
+      newOptions.value = [''];
+    }
+  });
+
+  const isOptionValid = (index) =>
+    !!(newOptions.value[index] || '').trim().length;
+
+  // New option rows can only be added once every existing row has a value.
+  const canAddOption = computed(() =>
+    newOptions.value.every((_, index) => isOptionValid(index)),
+  );
+
+  const touchOption = (index) => {
+    newOptions.value[index] = (newOptions.value[index] || '').trim();
+    touchedOptions.value.add(index);
+  };
+
+  const isOptionTouched = (index) => touchedOptions.value.has(index);
 
   // Key autocomplete state
   const showKeyDropdown = ref(false);
@@ -285,6 +388,8 @@
     switch (type) {
       case 'text':
         return 'متن';
+      case 'select':
+        return 'گزینش';
       default:
         return type;
     }
@@ -334,6 +439,7 @@
         label: attr.label,
         placeholder: attr.placeholder || '',
         type: attr.type || 'text',
+        options: attr.options || [],
         required: !!attr.required,
       });
     }
@@ -343,9 +449,34 @@
     cancelNewRow();
   };
 
+  const addOption = () => {
+    if (!canAddOption.value) return;
+    newOptions.value.push('');
+  };
+
+  const removeOption = (index) => {
+    // Always keep at least one option row for select-type attributes.
+    if (newOptions.value.length <= 1) {
+      newOptions.value = [''];
+      touchedOptions.value.delete(0);
+      return;
+    }
+    newOptions.value.splice(index, 1);
+    // Reindex remaining touched rows after the splice.
+    touchedOptions.value = new Set(
+      [...touchedOptions.value]
+        .filter((i) => i !== index)
+        .map((i) => (i > index ? i - 1 : i)),
+    );
+  };
+
   const resetNewRow = () => {
     resetForm({ values: { key: '', label: '', placeholder: '' } });
     newRequired.value = true;
+    newType.value = 'text';
+    newOptions.value = [];
+    touchedOptions.value = new Set();
+    optionsError.value = null;
     newRowError.value = null;
     showKeyDropdown.value = false;
   };
@@ -368,12 +499,26 @@
       return;
     }
 
+    // Select attributes need at least one non-empty option value.
+    const options = newOptions.value
+      .map((option) => option.trim())
+      .filter(Boolean);
+
+    if (newType.value === 'select' && !options.length) {
+      // Surface the required error on every empty option row.
+      newOptions.value.forEach((_, index) => touchedOptions.value.add(index));
+      optionsError.value = 'برای نوع گزینش، حداقل یک گزینه با مقدار وارد کنید.';
+      return;
+    }
+    optionsError.value = null;
+
     // Create the attribute in the global catalog right away and keep its id.
     const created = await createAttributePromise({
       key,
       label: values.label.trim(),
       placeholder: values.placeholder?.trim() || '',
-      type: 'text',
+      type: newType.value,
+      options: newType.value === 'select' ? options : [],
       required: newRequired.value,
     });
 
@@ -385,6 +530,7 @@
       label: created.label,
       placeholder: created.placeholder || '',
       type: created.type || 'text',
+      options: created.options || [],
       required: !!created.required,
     });
 
@@ -421,6 +567,7 @@
       label: attr.label,
       placeholder: attr.placeholder || '',
       type: attr.type || 'text',
+      options: attr.options || [],
       required: !!attr.required,
     }));
     toast.success('ویژگی‌های دسته‌بندی با موفقیت ذخیره شد.');
@@ -440,6 +587,7 @@
           label: attr.label,
           placeholder: attr.placeholder || '',
           type: attr.type || 'text',
+          options: attr.options || [],
           required: !!attr.required,
         }));
       }
@@ -769,6 +917,136 @@
     color: #991b1b;
     font-size: 13px;
     padding: 0 12px;
+  }
+
+  .type-select {
+    width: 100%;
+    padding: 7px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 13px;
+    background: white;
+    cursor: pointer;
+  }
+
+  .type-select:focus {
+    outline: none;
+    border-color: #3b82f6;
+  }
+
+  .options-count {
+    font-size: 11px;
+    color: #6b7280;
+  }
+
+  .attribute-options {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 8px 10px;
+    background: #f9fafb;
+    border: 1px dashed #d1d5db;
+    border-radius: 6px;
+  }
+
+  .attribute-options-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    white-space: nowrap;
+  }
+
+  .attribute-options-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .attribute-option-badge {
+    font-size: 12px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: #e5e7eb;
+    color: #374151;
+  }
+
+  .options-row {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    background: white;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+  }
+
+  .options-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+  }
+
+  .options-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .option-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .option-item input {
+    width: 180px;
+    padding: 7px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 13px;
+  }
+
+  .option-item input:focus {
+    outline: none;
+    border-color: #3b82f6;
+  }
+
+  .btn-option-remove {
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 6px;
+    background: #fee2e2;
+    color: #991b1b;
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .btn-option-remove:hover {
+    background: #fecaca;
+  }
+
+  .btn-add-option {
+    padding: 7px 12px;
+    border: 1px dashed #93c5fd;
+    border-radius: 6px;
+    background: #eff6ff;
+    color: #1e40af;
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+  .btn-add-option:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .btn-add-option:hover:not(:disabled) {
+    background: #dbeafe;
   }
 
   .footer {
