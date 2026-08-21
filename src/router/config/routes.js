@@ -30,6 +30,16 @@ const ROUTES = [
     },
   },
   {
+    name: 'product-details',
+    path: '/products/:id',
+    component: () => import('@/views/products/show.vue'),
+    meta: {
+      layout: 'main',
+      title: 'جزئیات کالا',
+      authRequired: true,
+    },
+  },
+  {
     name: 'categories',
     path: '/categories',
     component: () => import('@/views/categories/index.vue'),

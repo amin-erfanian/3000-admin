@@ -92,18 +92,25 @@
         <div class="product-details-card__actions">
           <BaseButton
             size="small"
-            class="product-details-card__action product-details-card__action--approve"
-            @click="approveProduct"
-          >
-            تایید کالا
-          </BaseButton>
-          <BaseButton
-            size="small"
             variant="outlined"
             class="product-details-card__action product-details-card__action--reject"
             @click="showRejectionModal = true"
           >
             رد کالا
+          </BaseButton>
+          <BaseButton
+            size="small"
+            class="product-details-card__action"
+            @click="goToProductPage"
+          >
+            مشخصات کالا
+          </BaseButton>
+          <BaseButton
+            size="small"
+            class="product-details-card__action product-details-card__action--approve"
+            @click="approveProduct"
+          >
+            تایید کالا
           </BaseButton>
         </div>
       </div>
@@ -120,6 +127,7 @@
 
 <script setup>
   import { computed, ref } from 'vue';
+  import { useRouter } from 'vue-router';
 
   import BaseButton from '@/components/common/base/base-button.vue';
   import ProductStatusBadge from '@/components/general/product-status-badge.vue';
@@ -133,6 +141,8 @@
     },
   });
   const emit = defineEmits(['approve', 'reject']);
+
+  const router = useRouter();
 
   const showRejectionModal = ref(false);
 
@@ -206,6 +216,13 @@
   const approveProduct = () => {
     emit('approve', {
       productId: props.product._id || props.product.id,
+    });
+  };
+
+  const goToProductPage = () => {
+    router.push({
+      name: 'product-details',
+      params: { id: props.product._id || props.product.id },
     });
   };
 

@@ -4,6 +4,10 @@ export const getProductList = (params) => {
   return http.get('/admin/products', { params });
 };
 
+export const getProduct = (productId) => {
+  return http.get(`/admin/products/${productId}`);
+};
+
 export const getSellerProductList = (params) => {
   return http.get('/products/seller', { params });
 };
@@ -22,6 +26,7 @@ export const rejectProduct = (productId, payload) => {
 
 export default {
   getProductList,
+  getProduct,
   createProduct,
   approveProduct,
   rejectProduct,
