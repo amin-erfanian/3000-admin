@@ -49,7 +49,118 @@
             v-for="(attr, index) in attributes"
             :key="attr.key"
             class="table-row"
+            :class="{ 'table-new': isEditing(attr) }"
           >
+            <!-- Inline edit row (replaces the display row) -->
+            <template v-if="isEditing(attr)">
+              <div class="col col-key" data-label="کلید">
+                <div class="field-cell">
+                  <span class="value-mono">{{ editKey }}</span>
+                </div>
+              </div>
+              <div class="col col-label" data-label="برچسب">
+                <div class="field-cell">
+                  <input
+                    v-model="editLabel"
+                    type="text"
+                    placeholder="عنوان نمایشی"
+                  />
+                  <span v-if="editLabelError" class="field-error">{{
+                    editLabelError
+                  }}</span>
+                </div>
+              </div>
+              <div class="col col-placeholder" data-label="پلیس‌هولدر">
+                <div class="field-cell">
+                  <input
+                    v-model="editPlaceholder"
+                    type="text"
+                    placeholder="مثال: مقدار را وارد کنید"
+                  />
+                </div>
+              </div>
+              <div class="col col-type" data-label="نوع">
+                <select v-model="editType" class="type-select">
+                  <option value="text">متن</option>
+                  <option value="select">گزینش</option>
+                </select>
+                <span v-if="editOptionsError" class="field-error">{{
+                  editOptionsError
+                }}</span>
+              </div>
+              <div class="col col-required" data-label="وضعیت">
+                <label class="radio">
+                  <input v-model="editRequired" type="radio" :value="true" />
+                  الزامی
+                </label>
+                <label class="radio">
+                  <input v-model="editRequired" type="radio" :value="false" />
+                  اختیاری
+                </label>
+              </div>
+              <div class="col col-actions">
+                <button
+                  @click="saveEdit(attr, index)"
+                  :disabled="updating"
+                  class="btn-primary btn-sm"
+                >
+                  {{ updating ? 'در حال ویرایش...' : 'ویرایش' }}
+                </button>
+                <button @click="cancelEdit" class="btn-secondary btn-sm">
+                  انصراف
+                </button>
+              </div>
+
+              <!-- Options editor for select-type attributes -->
+              <div v-if="editType === 'select'" class="options-row">
+                <div class="options-title">گزینه‌ها</div>
+                <div class="options-list">
+                  <div
+                    v-for="(option, optionIndex) in editOptions"
+                    :key="optionIndex"
+                    class="option-item"
+                  >
+                    <div class="field-cell">
+                      <input
+                        v-model="editOptions[optionIndex]"
+                        type="text"
+                        placeholder="مقدار گزینه"
+                        @blur="editOptions[optionIndex] = editOptions[optionIndex].trim()"
+                      />
+                      <span
+                        v-if="!editOptions[optionIndex].trim()"
+                        class="field-error"
+                      >
+                        مقدار گزینه الزامی است.
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      class="btn-option-remove"
+                      @click="removeEditOption(optionIndex)"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    class="btn-add-option"
+                    :disabled="!canAddEditOption"
+                    :title="
+                      canAddEditOption
+                        ? ''
+                        : 'ابتدا مقدار گزینه‌های فعلی را وارد کنید.'
+                    "
+                    @click="addEditOption"
+                  >
+                    + افزودن گزینه
+                  </button>
+                </div>
+              </div>
+            </template>
+
+            <!-- Display row -->
+            <template v-else>
             <div class="col col-key" data-label="کلید">
               <span class="value-mono">{{ attr.key }}</span>
             </div>
@@ -77,6 +188,13 @@
               </span>
             </div>
             <div class="col col-actions">
+              <BaseTooltip class="action-btn" text="ویرایش ویژگی">
+                <BaseIcon
+                  iconName="edit"
+                  @click="startEdit(attr)"
+                  class="btn-icon edit"
+                />
+              </BaseTooltip>
               <BaseTooltip class="action-btn" text="حذف ویژگی">
                 <BaseIcon
                   iconName="trash-bin"
@@ -103,6 +221,7 @@
                 </span>
               </div>
             </div>
+            </template>
           </div>
 
           <!-- Inline new attribute row -->
@@ -250,6 +369,9 @@
           </div>
 
           <div v-if="newRowError" class="row-error">{{ newRowError }}</div>
+          <div v-if="updateError" class="row-error">
+            {{ errorMessage(updateError) }}
+          </div>
           <div v-if="createError" class="row-error">
             {{ errorMessage(createError) }}
           </div>
@@ -281,6 +403,7 @@
   import {
     getAttributes,
     createAttribute,
+    updateAttribute,
     attachCategoryAttributes,
     removeCategoryAttribute,
   } from '@/services/attribute.service';
@@ -309,6 +432,13 @@
     error: createError,
     execute: createAttributePromise,
   } = usePromise(createAttribute);
+
+  // Update an attribute in the global catalog (PUT /admin/attributes/:id)
+  const {
+    loading: updating,
+    error: updateError,
+    execute: updateAttributePromise,
+  } = usePromise(updateAttribute);
 
   // Attach attributes to this category (POST /category/:categoryId)
   const {
@@ -366,6 +496,98 @@
 
   // Key autocomplete state
   const showKeyDropdown = ref(false);
+
+  // Inline edit state for an existing attribute
+  const editingId = ref(null);
+  const editKey = ref('');
+  const editLabel = ref('');
+  const editPlaceholder = ref('');
+  const editType = ref('text');
+  const editRequired = ref(true);
+  const editOptions = ref([]);
+  const editLabelError = ref(null);
+  const editOptionsError = ref(null);
+
+  const isEditing = (attr) => attr._id && attr._id === editingId.value;
+
+  const canAddEditOption = computed(() =>
+    editOptions.value.every((option) => !!option.trim()),
+  );
+
+  const startEdit = (attr) => {
+    cancelNewRow();
+    editingId.value = attr._id;
+    editKey.value = attr.key;
+    editLabel.value = attr.label;
+    editPlaceholder.value = attr.placeholder || '';
+    editType.value = attr.type || 'text';
+    editRequired.value = !!attr.required;
+    editOptions.value = [...(attr.options || [])];
+    editLabelError.value = null;
+    editOptionsError.value = null;
+  };
+
+  const cancelEdit = () => {
+    editingId.value = null;
+    editLabelError.value = null;
+    editOptionsError.value = null;
+  };
+
+  const addEditOption = () => {
+    if (!canAddEditOption.value) return;
+    editOptions.value.push('');
+  };
+
+  const removeEditOption = (index) => {
+    // Always keep at least one option row for select-type attributes.
+    if (editOptions.value.length <= 1) {
+      editOptions.value = [''];
+      return;
+    }
+    editOptions.value.splice(index, 1);
+  };
+
+  const saveEdit = async (attr, index) => {
+    editLabelError.value = null;
+    editOptionsError.value = null;
+
+    const label = editLabel.value.trim();
+    if (!label) {
+      editLabelError.value = 'برچسب الزامی است.';
+      return;
+    }
+
+    const options = editOptions.value.map((option) => option.trim()).filter(Boolean);
+    if (editType.value === 'select' && !options.length) {
+      editOptionsError.value =
+        'برای نوع گزینش، حداقل یک گزینه با مقدار وارد کنید.';
+      return;
+    }
+
+    const updated = await updateAttributePromise(attr._id, {
+      key: attr.key,
+      label,
+      placeholder: editPlaceholder.value.trim(),
+      type: editType.value,
+      options: editType.value === 'select' ? options : [],
+      required: editRequired.value,
+    });
+
+    if (!updated) return; // error handled by usePromise
+
+    // Fall back to the local payload when the API returns no body.
+    attributes.value.splice(index, 1, {
+      _id: updated._id || attr._id,
+      key: updated.key || attr.key,
+      label: updated.label || label,
+      placeholder: updated.placeholder ?? editPlaceholder.value.trim(),
+      type: updated.type || editType.value,
+      options: updated.options || options,
+      required: updated.required ?? editRequired.value,
+    });
+
+    cancelEdit();
+  };
 
   const { handleSubmit, resetForm } = useForm();
   const { value: newKey, errorMessage: keyError } = useField(
@@ -482,6 +704,7 @@
   };
 
   const openNewRow = () => {
+    cancelEdit();
     resetNewRow();
     showNewRow.value = true;
   };
@@ -829,6 +1052,10 @@
 
   .btn-icon.delete {
     color: var(--palette-error);
+  }
+
+  .btn-icon.edit {
+    color: #2563eb;
   }
 
   .btn-primary {
