@@ -22,10 +22,15 @@ export const removeCategoryAttribute = (categoryId, attributeId) => {
   return http.delete(`/admin/attributes/category/${categoryId}/${attributeId}`);
 };
 
+export const getHeaders = () => {
+  return http.get('/admin/attributes/headers');
+};
+
 export default {
   getAttributes,
   createAttribute,
   updateAttribute,
   attachCategoryAttributes,
   removeCategoryAttribute,
+  getHeaders,
 };

@@ -35,80 +35,119 @@
           کنید.
         </div>
 
-        <div v-else class="table">
-          <div class="table-row table-head">
-            <div class="col col-key">کلید (انگلیسی)</div>
-            <div class="col col-label">عنوان (فارسی)</div>
-            <div class="col col-placeholder">پلیس‌هولدر (فارسی)</div>
-            <div class="col col-type">نوع</div>
-            <div class="col col-required">وضعیت</div>
-            <div class="col col-actions"></div>
-          </div>
-
+        <div v-else class="attributes-list">
           <div
             v-for="(attr, index) in attributes"
             :key="attr.key"
-            class="table-row"
+            class="attribute-row"
             :class="{ 'table-new': isEditing(attr) }"
           >
             <!-- Inline edit row (replaces the display row) -->
             <template v-if="isEditing(attr)">
-              <div class="col col-key" data-label="کلید">
-                <div class="field-cell">
-                  <span class="value-mono">{{ editKey }}</span>
+              <div class="form-row form-row-main">
+                <div class="col col-key" data-label="کلید">
+                  <div class="field-cell">
+                    <label class="field-label">کلید</label>
+                    <span class="value-mono">{{ editKey }}</span>
+                  </div>
+                </div>
+                <div class="col col-label" data-label="عنوان">
+                  <div class="field-cell">
+                    <label class="field-label">عنوان</label>
+                    <input
+                      v-model="editLabel"
+                      type="text"
+                      placeholder="عنوان نمایشی"
+                    />
+                    <span v-if="editLabelError" class="field-error">{{
+                      editLabelError
+                    }}</span>
+                  </div>
+                </div>
+                <div class="col col-header" data-label="دسته">
+                  <div class="field-cell autocomplete">
+                    <label class="field-label">دسته</label>
+                    <input
+                      v-model="editHeader"
+                      type="text"
+                      placeholder="مثال: مشخصات فنی"
+                      @focus="openEditHeaderDropdown"
+                      @blur="showEditHeaderDropdown = false"
+                      @keydown.escape="showEditHeaderDropdown = false"
+                    />
+                    <div
+                      v-if="showEditHeaderDropdown"
+                      class="autocomplete-list autocomplete-list-sm"
+                    >
+                      <div v-if="headersLoading" class="autocomplete-empty">
+                        در حال بارگذاری دسته‌ها...
+                      </div>
+                      <div v-else-if="headersError" class="autocomplete-empty">
+                        خطا در بارگذاری دسته‌ها
+                      </div>
+                      <div
+                        v-else-if="!editHeaderSuggestions.length"
+                        class="autocomplete-empty"
+                      >
+                        دسته‌ای یافت نشد. مقدار را دستی وارد کنید.
+                      </div>
+                      <div
+                        v-for="header in editHeaderSuggestions"
+                        v-else
+                        :key="header"
+                        class="autocomplete-option"
+                        @mousedown.prevent="selectEditHeader(header)"
+                      >
+                        <span class="option-key">{{ header }}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div class="col col-label" data-label="برچسب">
-                <div class="field-cell">
-                  <input
-                    v-model="editLabel"
-                    type="text"
-                    placeholder="عنوان نمایشی"
-                  />
-                  <span v-if="editLabelError" class="field-error">{{
-                    editLabelError
-                  }}</span>
+              <div class="form-row form-row-secondary">
+                <div class="col col-placeholder" data-label="پلیس‌هولدر">
+                  <div class="field-cell">
+                    <label class="field-label">پلیس‌هولدر</label>
+                    <input
+                      v-model="editPlaceholder"
+                      type="text"
+                      placeholder="مثال: مقدار را وارد کنید"
+                    />
+                  </div>
                 </div>
-              </div>
-              <div class="col col-placeholder" data-label="پلیس‌هولدر">
-                <div class="field-cell">
-                  <input
-                    v-model="editPlaceholder"
-                    type="text"
-                    placeholder="مثال: مقدار را وارد کنید"
-                  />
+                <div class="col col-type" data-label="نوع">
+                  <div class="field-cell">
+                    <label class="field-label">نوع</label>
+                    <select v-model="editType" class="type-select">
+                      <option value="text">متن</option>
+                      <option value="select">گزینش</option>
+                    </select>
+                    <span v-if="editOptionsError" class="field-error">{{
+                      editOptionsError
+                    }}</span>
+                  </div>
                 </div>
-              </div>
-              <div class="col col-type" data-label="نوع">
-                <select v-model="editType" class="type-select">
-                  <option value="text">متن</option>
-                  <option value="select">گزینش</option>
-                </select>
-                <span v-if="editOptionsError" class="field-error">{{
-                  editOptionsError
-                }}</span>
-              </div>
-              <div class="col col-required" data-label="وضعیت">
-                <label class="radio">
-                  <input v-model="editRequired" type="radio" :value="true" />
-                  الزامی
-                </label>
-                <label class="radio">
-                  <input v-model="editRequired" type="radio" :value="false" />
-                  اختیاری
-                </label>
-              </div>
-              <div class="col col-actions">
-                <button
-                  @click="saveEdit(attr, index)"
-                  :disabled="updating"
-                  class="btn-primary btn-sm"
-                >
-                  {{ updating ? 'در حال ویرایش...' : 'ویرایش' }}
-                </button>
-                <button @click="cancelEdit" class="btn-secondary btn-sm">
-                  انصراف
-                </button>
+                <div class="col col-required" data-label="وضعیت">
+                  <div class="field-cell">
+                    <label class="field-label">وضعیت</label>
+                    <select v-model="editRequired" class="type-select">
+                      <option :value="true">الزامی</option>
+                      <option :value="false">اختیاری</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col col-actions">
+                  <button
+                    @click="saveEdit(attr, index)"
+                    :disabled="updating"
+                    class="btn-primary btn-sm"
+                  >
+                    {{ updating ? 'در حال ویرایش...' : 'ویرایش' }}
+                  </button>
+                  <button @click="cancelEdit" class="btn-secondary btn-sm">
+                    انصراف
+                  </button>
+                </div>
               </div>
 
               <!-- Options editor for select-type attributes -->
@@ -125,7 +164,10 @@
                         v-model="editOptions[optionIndex]"
                         type="text"
                         placeholder="مقدار گزینه"
-                        @blur="editOptions[optionIndex] = editOptions[optionIndex].trim()"
+                        @blur="
+                          editOptions[optionIndex] =
+                            editOptions[optionIndex].trim()
+                        "
                       />
                       <span
                         v-if="!editOptions[optionIndex].trim()"
@@ -159,165 +201,234 @@
               </div>
             </template>
 
-            <!-- Display row -->
+            <!-- Display row: same form layout, read-only, with edit/delete actions -->
             <template v-else>
-            <div class="col col-key" data-label="کلید">
-              <span class="value-mono">{{ attr.key }}</span>
-            </div>
-            <div class="col col-label" data-label="برچسب">
-              <span>{{ attr.label }}</span>
-            </div>
-            <div class="col col-placeholder" data-label="پلیس‌هولدر">
-              <span>{{ attr.placeholder || '—' }}</span>
-            </div>
-            <div class="col col-type" data-label="نوع">
-              <span class="badge">{{ typeLabel(attr.type) }}</span>
-              <span
-                v-if="attr.type === 'select' && attr.options?.length"
-                class="options-count"
-              >
-                ({{ attr.options.length }} گزینه)
-              </span>
-            </div>
-            <div class="col col-required" data-label="وضعیت">
-              <span
-                class="badge"
-                :class="attr.required ? 'badge-required' : 'badge-optional'"
-              >
-                {{ attr.required ? 'الزامی' : 'اختیاری' }}
-              </span>
-            </div>
-            <div class="col col-actions">
-              <BaseTooltip class="action-btn" text="ویرایش ویژگی">
-                <BaseIcon
-                  iconName="edit"
-                  @click="startEdit(attr)"
-                  class="btn-icon edit"
-                />
-              </BaseTooltip>
-              <BaseTooltip class="action-btn" text="حذف ویژگی">
-                <BaseIcon
-                  iconName="trash-bin"
-                  @click="removeAttribute(index)"
-                  class="btn-icon delete"
-                  :style="removing ? 'opacity: 0.5; pointer-events: none;' : ''"
-                />
-              </BaseTooltip>
-            </div>
-
-            <!-- Options of a select-type attribute, shown below the main row -->
-            <div
-              v-if="attr.type === 'select' && attr.options?.length"
-              class="attribute-options"
-            >
-              <div class="attribute-options-title">گزینه‌ها:</div>
-              <div class="attribute-options-list">
-                <span
-                  v-for="option in attr.options"
-                  :key="option"
-                  class="attribute-option-badge"
-                >
-                  {{ option }}
-                </span>
+              <div class="form-row form-row-main">
+                <div class="col col-key" data-label="کلید">
+                  <div class="field-cell">
+                    <label class="field-label">کلید</label>
+                    <span class="value-mono">{{ attr.key }}</span>
+                  </div>
+                </div>
+                <div class="col col-label" data-label="عنوان">
+                  <div class="field-cell">
+                    <label class="field-label">عنوان</label>
+                    <span class="field-value">{{ attr.label }}</span>
+                  </div>
+                </div>
+                <div class="col col-header" data-label="دسته">
+                  <div class="field-cell">
+                    <label class="field-label">دسته</label>
+                    <span class="field-value">{{ attr.header || '—' }}</span>
+                  </div>
+                </div>
               </div>
-            </div>
+              <div class="form-row form-row-secondary">
+                <div class="col col-placeholder" data-label="پلیس‌هولدر">
+                  <div class="field-cell">
+                    <label class="field-label">پلیس‌هولدر</label>
+                    <span class="field-value">{{
+                      attr.placeholder || '—'
+                    }}</span>
+                  </div>
+                </div>
+                <div class="col col-type" data-label="نوع">
+                  <div class="field-cell">
+                    <label class="field-label">نوع</label>
+                    <span class="field-value">{{ typeLabel(attr.type) }}</span>
+                  </div>
+                </div>
+                <div class="col col-required" data-label="وضعیت">
+                  <div class="field-cell">
+                    <label class="field-label">وضعیت</label>
+                    <span class="field-value">{{
+                      attr.required ? 'الزامی' : 'اختیاری'
+                    }}</span>
+                  </div>
+                </div>
+                <div class="col col-actions">
+                  <button
+                    class="btn-primary btn-sm"
+                    :disabled="removing"
+                    @click="startEdit(attr)"
+                  >
+                    ویرایش
+                  </button>
+                  <button
+                    class="btn-secondary btn-sm btn-delete"
+                    :style="
+                      removing ? 'opacity: 0.5; pointer-events: none;' : ''
+                    "
+                    @click="removeAttribute(index)"
+                  >
+                    حذف
+                  </button>
+                </div>
+              </div>
+
+              <!-- Options of a select-type attribute, shown below the main row -->
+              <div
+                v-if="attr.type === 'select' && attr.options?.length"
+                class="attribute-options"
+              >
+                <div class="attribute-options-title">گزینه‌ها:</div>
+                <div class="attribute-options-list">
+                  <span
+                    v-for="option in attr.options"
+                    :key="option"
+                    class="attribute-option-badge"
+                  >
+                    {{ option }}
+                  </span>
+                </div>
+              </div>
             </template>
           </div>
 
           <!-- Inline new attribute row -->
-          <div v-if="showNewRow" class="table-row table-new">
-            <div class="col col-key" data-label="کلید">
-              <div class="field-cell autocomplete">
-                <input
-                  v-model="newKey"
-                  type="text"
-                  placeholder="کلید یکتای ذخیره سازی"
-                  @input="normalizeKey"
-                  @focus="openKeyDropdown"
-                  @blur="closeKeyDropdown"
-                  @keydown.escape="closeKeyDropdown"
-                />
-                <div v-if="showKeyDropdown" class="autocomplete-list">
-                  <div v-if="attributesLoading" class="autocomplete-empty">
-                    در حال بارگذاری ویژگی‌ها...
+          <div v-if="showNewRow" class="attribute-row table-new">
+            <div class="form-row form-row-main">
+              <div class="col col-key" data-label="کلید">
+                <div class="field-cell autocomplete">
+                  <label class="field-label">کلید</label>
+                  <input
+                    v-model="newKey"
+                    type="text"
+                    placeholder="کلید یکتای ذخیره سازی"
+                    @input="normalizeKey"
+                    @focus="openKeyDropdown"
+                    @blur="closeKeyDropdown"
+                    @keydown.escape="closeKeyDropdown"
+                  />
+                  <div v-if="showKeyDropdown" class="autocomplete-list">
+                    <div v-if="attributesLoading" class="autocomplete-empty">
+                      در حال بارگذاری ویژگی‌ها...
+                    </div>
+                    <div v-else-if="attributesError" class="autocomplete-empty">
+                      خطا در بارگذاری ویژگی‌ها
+                    </div>
+                    <div
+                      v-else-if="!keySuggestions.length"
+                      class="autocomplete-empty"
+                    >
+                      ویژگی‌ای یافت نشد. کلید را دستی وارد کنید.
+                    </div>
+                    <div
+                      v-for="attr in keySuggestions"
+                      v-else
+                      :key="attr.key"
+                      class="autocomplete-option"
+                      @mousedown.prevent="selectAttribute(attr)"
+                    >
+                      <span class="option-key">{{ attr.key }}</span>
+                      <span class="option-label">{{ attr.label }}</span>
+                    </div>
                   </div>
-                  <div v-else-if="attributesError" class="autocomplete-empty">
-                    خطا در بارگذاری ویژگی‌ها
-                  </div>
+                  <span v-if="keyError" class="field-error">{{
+                    keyError
+                  }}</span>
+                </div>
+              </div>
+              <div class="col col-label" data-label="عنوان">
+                <div class="field-cell">
+                  <label class="field-label">عنوان</label>
+                  <input
+                    v-model="newLabel"
+                    type="text"
+                    placeholder="عنوان نمایشی"
+                  />
+                  <span v-if="labelError" class="field-error">{{
+                    labelError
+                  }}</span>
+                </div>
+              </div>
+              <div class="col col-header" data-label="دسته">
+                <div class="field-cell autocomplete">
+                  <label class="field-label">دسته</label>
+                  <input
+                    v-model="newHeader"
+                    type="text"
+                    placeholder="مثال: مشخصات فنی"
+                    @focus="openNewHeaderDropdown"
+                    @blur="showNewHeaderDropdown = false"
+                    @keydown.escape="showNewHeaderDropdown = false"
+                  />
                   <div
-                    v-else-if="!keySuggestions.length"
-                    class="autocomplete-empty"
+                    v-if="showNewHeaderDropdown"
+                    class="autocomplete-list autocomplete-list-sm"
                   >
-                    ویژگی‌ای یافت نشد. کلید را دستی وارد کنید.
-                  </div>
-                  <div
-                    v-for="attr in keySuggestions"
-                    v-else
-                    :key="attr.key"
-                    class="autocomplete-option"
-                    @mousedown.prevent="selectAttribute(attr)"
-                  >
-                    <span class="option-key">{{ attr.key }}</span>
-                    <span class="option-label">{{ attr.label }}</span>
+                    <div v-if="headersLoading" class="autocomplete-empty">
+                      در حال بارگذاری دسته‌ها...
+                    </div>
+                    <div v-else-if="headersError" class="autocomplete-empty">
+                      خطا در بارگذاری دسته‌ها
+                    </div>
+                    <div
+                      v-else-if="!newHeaderSuggestions.length"
+                      class="autocomplete-empty"
+                    >
+                      دسته‌ای یافت نشد. مقدار را دستی وارد کنید.
+                    </div>
+                    <div
+                      v-for="header in newHeaderSuggestions"
+                      v-else
+                      :key="header"
+                      class="autocomplete-option"
+                      @mousedown.prevent="selectNewHeader(header)"
+                    >
+                      <span class="option-key">{{ header }}</span>
+                    </div>
                   </div>
                 </div>
-                <span v-if="keyError" class="field-error">{{ keyError }}</span>
               </div>
             </div>
-            <div class="col col-label" data-label="برچسب">
-              <div class="field-cell">
-                <input
-                  v-model="newLabel"
-                  type="text"
-                  placeholder="عنوان نمایشی"
-                />
-                <span v-if="labelError" class="field-error">{{
-                  labelError
-                }}</span>
+            <div class="form-row form-row-secondary">
+              <div class="col col-placeholder" data-label="پلیس‌هولدر">
+                <div class="field-cell">
+                  <label class="field-label">پلیس‌هولدر</label>
+                  <input
+                    v-model="newPlaceholder"
+                    type="text"
+                    placeholder="مثال: مقدار را وارد کنید"
+                  />
+                  <span v-if="placeholderError" class="field-error">{{
+                    placeholderError
+                  }}</span>
+                </div>
               </div>
-            </div>
-            <div class="col col-placeholder" data-label="پلیس‌هولدر">
-              <div class="field-cell">
-                <input
-                  v-model="newPlaceholder"
-                  type="text"
-                  placeholder="مثال: مقدار را وارد کنید"
-                />
-                <span v-if="placeholderError" class="field-error">{{
-                  placeholderError
-                }}</span>
+              <div class="col col-type" data-label="نوع">
+                <div class="field-cell">
+                  <label class="field-label">نوع</label>
+                  <select v-model="newType" class="type-select">
+                    <option value="text">متن</option>
+                    <option value="select">گزینش</option>
+                  </select>
+                  <span v-if="optionsError" class="field-error">{{
+                    optionsError
+                  }}</span>
+                </div>
               </div>
-            </div>
-            <div class="col col-type" data-label="نوع">
-              <select v-model="newType" class="type-select">
-                <option value="text">متن</option>
-                <option value="select">گزینش</option>
-              </select>
-              <span v-if="optionsError" class="field-error">{{
-                optionsError
-              }}</span>
-            </div>
-            <div class="col col-required" data-label="وضعیت">
-              <label class="radio">
-                <input v-model="newRequired" type="radio" :value="true" />
-                الزامی
-              </label>
-              <label class="radio">
-                <input v-model="newRequired" type="radio" :value="false" />
-                اختیاری
-              </label>
-            </div>
-            <div class="col col-actions">
-              <button
-                @click="addAttribute"
-                :disabled="creating"
-                class="btn-primary btn-sm"
-              >
-                {{ creating ? 'در حال افزودن...' : 'افزودن' }}
-              </button>
-              <button @click="cancelNewRow" class="btn-secondary btn-sm">
-                انصراف
-              </button>
+              <div class="col col-required" data-label="وضعیت">
+                <div class="field-cell">
+                  <label class="field-label">وضعیت</label>
+                  <select v-model="newRequired" class="type-select">
+                    <option :value="true">الزامی</option>
+                    <option :value="false">اختیاری</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col col-actions">
+                <button
+                  @click="addAttribute"
+                  :disabled="creating"
+                  class="btn-primary btn-sm"
+                >
+                  {{ creating ? 'در حال افزودن...' : 'افزودن' }}
+                </button>
+                <button @click="cancelNewRow" class="btn-secondary btn-sm">
+                  انصراف
+                </button>
+              </div>
             </div>
 
             <!-- Options editor for select-type attributes -->
@@ -397,11 +508,12 @@
   import { useForm, useField } from 'vee-validate';
   import { toast } from 'vue3-toastify';
   import BaseIcon from '@/components/common/base/base-icon.vue';
-  import BaseTooltip from '@/components/common/base/base-tooltip.vue';
   import { usePromise } from '@/composables';
   import { getCategory } from '@/services/category.service';
+
   import {
     getAttributes,
+    getHeaders,
     createAttribute,
     updateAttribute,
     attachCategoryAttributes,
@@ -425,6 +537,14 @@
     error: attributesError,
     execute: fetchAttributes,
   } = usePromise(getAttributes);
+
+  // All available headers (for the header autocomplete)
+  const {
+    data: allHeaders,
+    loading: headersLoading,
+    error: headersError,
+    execute: fetchHeaders,
+  } = usePromise(getHeaders);
 
   // Create attribute in the global catalog (POST /admin/attributes)
   const {
@@ -466,6 +586,7 @@
   // New attribute inline form (validated with vee-validate)
   const showNewRow = ref(false);
   const newRowError = ref(null);
+  const newHeader = ref('');
   const newRequired = ref(true);
   const newType = ref('text');
   const newOptions = ref([]);
@@ -497,10 +618,54 @@
   // Key autocomplete state
   const showKeyDropdown = ref(false);
 
+  // Header autocomplete state (a separate dropdown per form)
+  const showNewHeaderDropdown = ref(false);
+  const showEditHeaderDropdown = ref(false);
+
+  // Suggestions for the header autocompletes, filtered by the current input
+  const headerSuggestions = (query) => {
+    const list = allHeaders.value || [];
+    const q = (query || '').trim().toLowerCase();
+    if (!q) return list;
+    return list.filter((header) => header.toLowerCase().includes(q));
+  };
+
+  const newHeaderSuggestions = computed(() =>
+    headerSuggestions(newHeader.value),
+  );
+  const editHeaderSuggestions = computed(() =>
+    headerSuggestions(editHeader.value),
+  );
+
+  const openNewHeaderDropdown = () => {
+    if (!allHeaders.value && !headersLoading.value) {
+      fetchHeaders();
+    }
+    showNewHeaderDropdown.value = true;
+  };
+
+  const openEditHeaderDropdown = () => {
+    if (!allHeaders.value && !headersLoading.value) {
+      fetchHeaders();
+    }
+    showEditHeaderDropdown.value = true;
+  };
+
+  const selectNewHeader = (header) => {
+    newHeader.value = header;
+    showNewHeaderDropdown.value = false;
+  };
+
+  const selectEditHeader = (header) => {
+    editHeader.value = header;
+    showEditHeaderDropdown.value = false;
+  };
+
   // Inline edit state for an existing attribute
   const editingId = ref(null);
   const editKey = ref('');
   const editLabel = ref('');
+  const editHeader = ref('');
   const editPlaceholder = ref('');
   const editType = ref('text');
   const editRequired = ref(true);
@@ -519,6 +684,7 @@
     editingId.value = attr._id;
     editKey.value = attr.key;
     editLabel.value = attr.label;
+    editHeader.value = attr.header || '';
     editPlaceholder.value = attr.placeholder || '';
     editType.value = attr.type || 'text';
     editRequired.value = !!attr.required;
@@ -531,6 +697,7 @@
     editingId.value = null;
     editLabelError.value = null;
     editOptionsError.value = null;
+    showEditHeaderDropdown.value = false;
   };
 
   const addEditOption = () => {
@@ -557,7 +724,9 @@
       return;
     }
 
-    const options = editOptions.value.map((option) => option.trim()).filter(Boolean);
+    const options = editOptions.value
+      .map((option) => option.trim())
+      .filter(Boolean);
     if (editType.value === 'select' && !options.length) {
       editOptionsError.value =
         'برای نوع گزینش، حداقل یک گزینه با مقدار وارد کنید.';
@@ -567,6 +736,7 @@
     const updated = await updateAttributePromise(attr._id, {
       key: attr.key,
       label,
+      header: editHeader.value.trim(),
       placeholder: editPlaceholder.value.trim(),
       type: editType.value,
       options: editType.value === 'select' ? options : [],
@@ -580,6 +750,7 @@
       _id: updated._id || attr._id,
       key: updated.key || attr.key,
       label: updated.label || label,
+      header: updated.header ?? editHeader.value.trim(),
       placeholder: updated.placeholder ?? editPlaceholder.value.trim(),
       type: updated.type || editType.value,
       options: updated.options || options,
@@ -659,6 +830,7 @@
         _id: attr._id,
         key: attr.key,
         label: attr.label,
+        header: attr.header || '',
         placeholder: attr.placeholder || '',
         type: attr.type || 'text',
         options: attr.options || [],
@@ -694,6 +866,7 @@
 
   const resetNewRow = () => {
     resetForm({ values: { key: '', label: '', placeholder: '' } });
+    newHeader.value = '';
     newRequired.value = true;
     newType.value = 'text';
     newOptions.value = [];
@@ -701,6 +874,7 @@
     optionsError.value = null;
     newRowError.value = null;
     showKeyDropdown.value = false;
+    showNewHeaderDropdown.value = false;
   };
 
   const openNewRow = () => {
@@ -739,6 +913,7 @@
     const created = await createAttributePromise({
       key,
       label: values.label.trim(),
+      header: newHeader.value.trim(),
       placeholder: values.placeholder?.trim() || '',
       type: newType.value,
       options: newType.value === 'select' ? options : [],
@@ -751,6 +926,7 @@
       _id: created._id,
       key: created.key,
       label: created.label,
+      header: created.header ?? newHeader.value.trim(),
       placeholder: created.placeholder || '',
       type: created.type || 'text',
       options: created.options || [],
@@ -788,6 +964,7 @@
       _id: attr._id,
       key: attr.key,
       label: attr.label,
+      header: attr.header || '',
       placeholder: attr.placeholder || '',
       type: attr.type || 'text',
       options: attr.options || [],
@@ -808,6 +985,7 @@
           _id: attr._id,
           key: attr.key,
           label: attr.label,
+          header: attr.header || '',
           placeholder: attr.placeholder || '',
           type: attr.type || 'text',
           options: attr.options || [],
@@ -898,30 +1076,35 @@
     border-radius: 8px;
   }
 
-  .table {
+  .attributes-list {
     display: flex;
     flex-direction: column;
     gap: 8px;
   }
 
-  .table-row {
-    display: grid;
-    grid-template-columns: 1.1fr 1.3fr 1.3fr 0.7fr 1.3fr auto;
+  .attribute-row {
+    display: flex;
+    flex-direction: column;
     gap: 12px;
-    align-items: center;
     padding: 12px;
     background: #f9fafb;
     border: 1px solid #e5e7eb;
     border-radius: 8px;
   }
 
-  .table-head {
-    background: transparent;
-    border: none;
-    padding: 0 12px;
-    font-size: 13px;
-    font-weight: 600;
-    color: #6b7280;
+  /* Sub-rows used by the display/add/edit forms to spread fields over two lines */
+  .form-row {
+    display: grid;
+    gap: 12px;
+    align-items: flex-end;
+  }
+
+  .form-row-main {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  .form-row-secondary {
+    grid-template-columns: 1fr 1fr 1fr auto;
   }
 
   .table-new {
@@ -938,14 +1121,22 @@
   .col-key,
   .col-label,
   .col-placeholder {
+    height: 100%;
     flex-wrap: wrap;
   }
 
   .field-cell {
     display: flex;
     flex-direction: column;
+    justify-content: space-between;
     gap: 4px;
     width: 100%;
+  }
+
+  .field-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
   }
 
   .field-error {
@@ -974,6 +1165,15 @@
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     max-height: 260px;
     overflow-y: auto;
+  }
+
+  /* Narrower dropdown for the header (string) autocomplete */
+  .autocomplete-list-sm {
+    width: 240px;
+  }
+
+  .autocomplete-list-sm .option-key {
+    font-family: 'IranYekan', sans-serif;
   }
 
   .autocomplete-empty {
@@ -1011,51 +1211,36 @@
     text-overflow: ellipsis;
   }
 
+  /* Shared read-only value box — same height/border as the inputs */
+  .field-value,
   .value-mono {
-    font-family: monospace;
+    display: block;
     font-size: 13px;
     color: #374151;
-    background: #e5e7eb;
-    padding: 2px 8px;
-    border-radius: 4px;
+    background: white;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 7px 10px;
+    overflow-wrap: anywhere;
   }
 
-  .badge {
-    font-size: 12px;
-    padding: 2px 10px;
-    border-radius: 999px;
-    background: #e5e7eb;
-    color: #374151;
-    font-weight: 500;
+  .value-mono {
+    font-family: monospace;
   }
 
-  .badge-required {
-    background: #fee2e2;
-    color: #991b1b;
+  .btn-secondary.btn-delete {
+    background: var(--palette-error);
+    color: white;
   }
 
-  .badge-optional {
-    background: #dbeafe;
-    color: #1e40af;
+  .btn-secondary.btn-delete:hover {
+    background: var(--palette-error);
+    filter: brightness(0.9);
   }
 
   .col-actions {
     justify-content: flex-end;
     gap: 8px;
-  }
-
-  .btn-icon {
-    cursor: pointer;
-    width: 18px;
-    height: 18px;
-  }
-
-  .btn-icon.delete {
-    color: var(--palette-error);
-  }
-
-  .btn-icon.edit {
-    color: #2563eb;
   }
 
   .btn-primary {
@@ -1087,6 +1272,8 @@
   .btn-secondary.btn-sm {
     padding: 6px 12px;
     font-size: 13px;
+    /* Match the height of the text inputs/selects next to them */
+    height: 32px;
   }
 
   .btn-secondary {
@@ -1103,22 +1290,6 @@
 
   .btn-secondary:hover {
     background: #d1d5db;
-  }
-
-  .radio {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    color: #374151;
-    cursor: pointer;
-    margin-left: 12px;
-  }
-
-  .radio input[type='radio'] {
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
   }
 
   .col input[type='text'] {
@@ -1303,22 +1474,14 @@
 
   /* Responsive */
   @media (max-width: 760px) {
-    .table-head {
-      display: none;
-    }
-
-    .table-row {
+    .form-row-main,
+    .form-row-secondary {
       grid-template-columns: 1fr 1fr;
-      gap: 10px;
     }
 
     .col-actions {
       grid-column: 1 / -1;
       justify-content: flex-end;
-    }
-
-    .col-required {
-      flex-wrap: wrap;
     }
 
     .header {
@@ -1340,7 +1503,8 @@
       padding: 16px;
     }
 
-    .table-row {
+    .form-row-main,
+    .form-row-secondary {
       grid-template-columns: 1fr;
     }
 
