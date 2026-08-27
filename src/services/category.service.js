@@ -1,7 +1,36 @@
 import http from '@/libs/http';
 
 export async function getCategoryTree() {
-  return http.get('/categories/tree');
+  const categories = await http.get('/categories/tree');
+  const nodesById = new Map();
+  for (const category of categories) {
+    nodesById.set(category._id, {
+      ...category,
+      children: [],
+    });
+  }
+
+  const roots = [];
+
+  for (const node of nodesById.values()) {
+    const parentId =
+      typeof node.parent === 'object' ? node.parent?._id : node.parent;
+
+    if (!parentId) {
+      roots.push(node);
+      continue;
+    }
+
+    const parent = nodesById.get(parentId);
+
+    if (parent) {
+      parent.children.push(node);
+    } else {
+      roots.push(node);
+    }
+  }
+
+  return roots;
 }
 
 export async function getCategory(id) {
