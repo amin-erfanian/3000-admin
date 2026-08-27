@@ -8,6 +8,10 @@ export const createAttribute = (data) => {
   return http.post('/admin/attributes', data);
 };
 
+export const createAttributesBatch = (attributes) => {
+  return http.post('/admin/attributes/batch', { attributes });
+};
+
 export const updateAttribute = (id, data) => {
   return http.put(`/admin/attributes/${id}`, data);
 };
@@ -29,6 +33,7 @@ export const getHeaders = () => {
 export default {
   getAttributes,
   createAttribute,
+  createAttributesBatch,
   updateAttribute,
   attachCategoryAttributes,
   removeCategoryAttribute,

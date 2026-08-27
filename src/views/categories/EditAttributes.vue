@@ -20,10 +20,12 @@
       <div class="card">
         <div class="card-header">
           <h3>ویژگی‌ها</h3>
-          <button v-if="!showNewRow" @click="openNewRow" class="btn-primary">
-            <span class="icon">+</span>
-            افزودن ویژگی
-          </button>
+          <div class="header-actions">
+            <button v-if="!showNewRow" @click="openNewRow" class="btn-primary">
+              <span class="icon">+</span>
+              افزودن ویژگی
+            </button>
+          </div>
         </div>
 
         <p class="hint">
@@ -553,6 +555,8 @@
     execute: createAttributePromise,
   } = usePromise(createAttribute);
 
+  // Create a batch of attributes in the global catalog (POST /admin/attributes/batch)
+
   // Update an attribute in the global catalog (PUT /admin/attributes/:id)
   const {
     loading: updating,
@@ -936,6 +940,8 @@
     cancelNewRow();
   });
 
+  // --- Excel batch import moved to categories index (ثبت تجمیعی ویژگی‌ها) ---
+
   const removeAttribute = async (index) => {
     const attr = attributes.value[index];
     if (!attr) return;
@@ -1065,6 +1071,12 @@
     font-size: 13px;
     color: #6b7280;
     line-height: 1.7;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
 
   .empty {

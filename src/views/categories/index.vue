@@ -2,10 +2,26 @@
   <div class="categories-manager">
     <div class="header">
       <h2>مدیریت دسته‌بندی‌ها</h2>
-      <button @click="openCreateModal" class="btn-primary">
-        <span class="icon">+</span>
-        افزودن دسته‌بندی جدید
-      </button>
+      <div class="header-actions">
+        <button @click="openCreateModal" class="btn-primary">
+          <span class="icon">+</span>
+          افزودن دسته‌بندی جدید
+        </button>
+        <input
+          ref="excelInput"
+          type="file"
+          accept=".xlsx,.xls,.csv"
+          class="excel-input"
+          @change="onExcelFile"
+        />
+        <button
+          :disabled="importing"
+          class="btn-success"
+          @click="excelInput?.click()"
+        >
+          {{ importing ? 'در حال ورود...' : 'ثبت تجمیعی ویژگی‌ها' }}
+        </button>
+      </div>
     </div>
 
     <div v-if="loading" class="loading">در حال بارگذاری...</div>
@@ -75,12 +91,146 @@
 <script setup>
   import { ref, computed, onMounted } from 'vue';
   import { useRouter } from 'vue-router';
+  import { toast } from 'vue3-toastify';
+  import * as XLSX from 'xlsx';
   import CategoryTreeItem from './CategoryTreeItem.vue';
   import CategoryFormModal from './CategoryFormModal.vue';
   import { usePromise } from '@/composables';
   import { deleteCategory, getCategoryTree } from '@/services/category.service';
+  import { createAttributesBatch } from '@/services/attribute.service';
 
   const router = useRouter();
+
+  // --- Excel batch import (ثبت تجمیعی ویژگی‌ها) ---
+  const excelInput = ref(null);
+  const {
+    loading: importing,
+    error: importError,
+    execute: createAttributesBatchPromise,
+  } = usePromise(createAttributesBatch);
+
+  // Persian header names of the first row in the excel file
+  // const EXCEL_COLUMNS = {
+  //   کلید: 'key',
+  //   عنوان: 'label',
+  //   دسته: 'header',
+  //   نوع: 'type',
+  //   گزینه‌ها: 'options',
+  //   پلیس‌هولدر: 'placeholder',
+  //   الزامی: 'required',
+  // };
+
+  const parseRequired = (value) => {
+    if (typeof value === 'boolean') return value;
+    const v = String(value ?? '')
+      .trim()
+      .toLowerCase();
+    return v === 'true' || v === 'بله' || v === '1' || v === 'yes';
+  };
+
+  const onExcelFile = async (event) => {
+    const file = event.target.files?.[0];
+    // Allow selecting the same file again after a failed import.
+    event.target.value = '';
+    if (!file) return;
+
+    let rows;
+    try {
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+    } catch {
+      toast.error('خواندن فایل اکسل ناموفق بود.');
+      return;
+    }
+
+    if (!rows.length) {
+      toast.error('فایل اکسل خالی است.');
+      return;
+    }
+
+    // Map Persian headers to property names; unknown columns are ignored.
+    const headers = Object.keys(rows[0]);
+    const mapped = Object.fromEntries(
+      headers.map((h) => [String(h).trim(), h]).filter(([prop]) => prop),
+    );
+
+    if (!mapped.key || !mapped.label || !mapped.type) {
+      toast.error(
+        'ستون‌های «کلید»، «عنوان» و «نوع» در فایل اکسل الزامی هستند.',
+      );
+      return;
+    }
+
+    const usedKeys = new Set();
+    const payload = [];
+
+    for (const [index, row] of rows.entries()) {
+      const key = String(row[mapped.key] ?? '')
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, '_');
+      const label = String(row[mapped.label] ?? '').trim();
+      const type = String(row[mapped.type] ?? '')
+        .trim()
+        .toLowerCase();
+
+      if (!key || !label) {
+        toast.error(`سطر ${index + 2}: «کلید» و «عنوان» الزامی هستند.`);
+        return;
+      }
+      if (!['text', 'select'].includes(type)) {
+        toast.error(`سطر ${index + 2}: نوع باید text یا select باشد.`);
+        return;
+      }
+      if (usedKeys.has(key)) {
+        toast.error(`سطر ${index + 2}: کلید «${key}» تکراری است.`);
+        return;
+      }
+
+      // Options live in a single cell, separated by commas
+      // (both Latin "," and Persian "،").
+      const options =
+        type === 'select'
+          ? String(row[mapped.options] ?? '')
+              .split(/[,،]/)
+              .map((option) => option.trim())
+              .filter(Boolean)
+          : [];
+
+      if (type === 'select' && !options.length) {
+        toast.error(
+          `سطر ${index + 2}: برای نوع select حداقل یک گزینه لازم است.`,
+        );
+        return;
+      }
+
+      usedKeys.add(key);
+      payload.push({
+        key,
+        label,
+        header: mapped.header ? String(row[mapped.header] ?? '').trim() : '',
+        type,
+        options,
+        placeholder: mapped.placeholder
+          ? String(row[mapped.placeholder] ?? '').trim()
+          : '',
+        required: mapped.required ? parseRequired(row[mapped.required]) : false,
+      });
+    }
+
+    const created = await createAttributesBatchPromise(payload);
+    if (!created) {
+      // error handled by usePromise
+      toast.error(
+        importError.value?.message?.fa || 'ورود تجمیعی ویژگی‌ها ناموفق بود.',
+      );
+      return;
+    }
+
+    toast.success(`${payload.length} ویژگی از اکسل وارد شد.`);
+  };
 
   // Fetch categories
   const {
@@ -191,6 +341,12 @@
     margin-bottom: 24px;
   }
 
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
   .header h2 {
     margin: 0;
     font-size: 24px;
@@ -214,6 +370,25 @@
 
   .btn-primary:hover {
     background: #2563eb;
+  }
+
+  .btn-success {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: #16a34a;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.2s;
+  }
+
+  .btn-success:hover {
+    background: #15803d;
   }
 
   .btn-secondary {
@@ -352,5 +527,9 @@
   .icon {
     font-size: 20px;
     line-height: 1;
+  }
+
+  .excel-input {
+    display: none;
   }
 </style>
