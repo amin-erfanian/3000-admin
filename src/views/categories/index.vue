@@ -17,7 +17,7 @@
         <button
           :disabled="importing"
           class="btn-success"
-          @click="excelInput?.click()"
+          @click="openExcelModal"
         >
           {{ importing ? 'در حال ورود...' : 'ثبت تجمیعی ویژگی‌ها' }}
         </button>
@@ -50,6 +50,40 @@
       @close="closeModal"
       @saved="handleSaved"
     />
+
+    <!-- Excel Batch Import Modal -->
+    <div
+      v-if="showExcelModal"
+      class="modal-overlay"
+      @click.self="closeExcelModal"
+    >
+      <div class="modal modal-small">
+        <div class="modal-header">
+          <h3>ثبت تجمیعی ویژگی‌ها</h3>
+          <button @click="closeExcelModal" class="btn-close">&times;</button>
+        </div>
+
+        <div class="modal-body">
+          <p class="excel-modal-hint">
+            ابتدا فایل نمونه را دانلود کنید؛ این فایل شامل نام و شناسه
+            دسته‌بندی‌ها است. پس از تکمیل ستون‌های ویژگی، فایل را بارگذاری
+            کنید.
+          </p>
+          <div class="excel-modal-actions">
+            <button @click="downloadExcelTemplate" class="btn-primary">
+              دانلود فایل نمونه اکسل
+            </button>
+            <button
+              :disabled="importing"
+              class="btn-success"
+              @click="excelInput?.click()"
+            >
+              {{ importing ? 'در حال ورود...' : 'انتخاب فایل اکسل' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Delete Confirmation Modal -->
     <div
@@ -103,11 +137,67 @@
 
   // --- Excel batch import (ثبت تجمیعی ویژگی‌ها) ---
   const excelInput = ref(null);
+  const showExcelModal = ref(false);
   const {
     loading: importing,
     error: importError,
     execute: createAttributesBatchPromise,
   } = usePromise(createAttributesBatch);
+
+  // Header of the downloaded preset file. The category columns are
+  // pre-filled per category; the attribute columns are filled by the user.
+  const EXCEL_TEMPLATE_HEADERS = [
+    'نام دسته بندی',
+    'شناسه دسته‌بندی',
+    'key',
+    'label',
+    'header',
+    'type',
+    'options',
+    'placeholder',
+    'required',
+  ];
+
+  const openExcelModal = () => {
+    showExcelModal.value = true;
+  };
+
+  const closeExcelModal = () => {
+    showExcelModal.value = false;
+  };
+
+  // Flatten the category tree into a list of { id, title } rows.
+  const flattenCategories = (categories, acc = []) => {
+    for (const category of categories) {
+      acc.push(category);
+      if (category.children?.length) {
+        flattenCategories(category.children, acc);
+      }
+    }
+    return acc;
+  };
+
+  const downloadExcelTemplate = () => {
+    const rows = flattenCategories(data.value || []).map((category) => ({
+      'نام دسته بندی': category.titleFa,
+      'شناسه دسته‌بندی': category._id,
+      key: '',
+      label: '',
+      header: '',
+      type: '',
+      options: '',
+      placeholder: '',
+      required: '',
+    }));
+
+    const sheet = XLSX.utils.json_to_sheet(rows, {
+      header: EXCEL_TEMPLATE_HEADERS,
+    });
+    const workbook = XLSX.utils.book_new();
+    workbook.Workbook = { Views: [{ RTL: true }] };
+    XLSX.utils.book_append_sheet(workbook, sheet, 'Attributes');
+    XLSX.writeFile(workbook, 'attributes-template.xlsx');
+  };
 
   // Persian header names of the first row in the excel file
   // const EXCEL_COLUMNS = {
@@ -150,23 +240,31 @@
       return;
     }
 
-    // Map Persian headers to property names; unknown columns are ignored.
+    // Map headers to property names; unknown columns are ignored.
     const headers = Object.keys(rows[0]);
     const mapped = Object.fromEntries(
       headers.map((h) => [String(h).trim(), h]).filter(([prop]) => prop),
     );
 
-    if (!mapped.key || !mapped.label || !mapped.type) {
+    if (
+      !mapped['شناسه دسته‌بندی'] ||
+      !mapped.key ||
+      !mapped.label ||
+      !mapped.type
+    ) {
       toast.error(
-        'ستون‌های «کلید»، «عنوان» و «نوع» در فایل اکسل الزامی هستند.',
+        'ستون‌های «شناسه دسته‌بندی»، «key»، «label» و «type» در فایل اکسل الزامی هستند.',
       );
       return;
     }
 
-    const usedKeys = new Set();
+    const attributesByKey = new Map();
     const payload = [];
 
     for (const [index, row] of rows.entries()) {
+      const categoryId = String(
+        row[mapped['شناسه دسته‌بندی']] ?? '',
+      ).trim();
       const key = String(row[mapped.key] ?? '')
         .trim()
         .toLowerCase()
@@ -176,16 +274,31 @@
         .trim()
         .toLowerCase();
 
-      if (!key || !label) {
-        toast.error(`سطر ${index + 2}: «کلید» و «عنوان» الزامی هستند.`);
+      // The template has one pre-filled row per category; rows where no
+      // attribute was entered are simply skipped.
+      if (!key && !label && !type) continue;
+
+      // Repetitive keys are allowed: the attribute is created once and
+      // assigned to every category it appears for.
+      const existing = attributesByKey.get(key);
+      if (existing) {
+        if (categoryId && !existing.categoryIds.includes(categoryId)) {
+          existing.categoryIds.push(categoryId);
+        }
+        continue;
+      }
+
+      if (!categoryId) {
+        toast.error(`سطر ${index + 2}: «شناسه دسته‌بندی» الزامی است.`);
         return;
       }
+      if (!key || !label) {
+        toast.error(`سطر ${index + 2}: «key» و «label» الزامی هستند.`);
+        return;
+      }
+
       if (!['text', 'select'].includes(type)) {
         toast.error(`سطر ${index + 2}: نوع باید text یا select باشد.`);
-        return;
-      }
-      if (usedKeys.has(key)) {
-        toast.error(`سطر ${index + 2}: کلید «${key}» تکراری است.`);
         return;
       }
 
@@ -206,8 +319,7 @@
         return;
       }
 
-      usedKeys.add(key);
-      payload.push({
+      const attribute = {
         key,
         label,
         header: mapped.header ? String(row[mapped.header] ?? '').trim() : '',
@@ -217,7 +329,15 @@
           ? String(row[mapped.placeholder] ?? '').trim()
           : '',
         required: mapped.required ? parseRequired(row[mapped.required]) : false,
-      });
+        categoryIds: [categoryId],
+      };
+      attributesByKey.set(key, attribute);
+      payload.push(attribute);
+    }
+
+    if (!payload.length) {
+      toast.error('هیچ ویژگی برای ثبت در فایل اکسل یافت نشد.');
+      return;
     }
 
     const created = await createAttributesBatchPromise(payload);
@@ -229,7 +349,18 @@
       return;
     }
 
-    toast.success(`${payload.length} ویژگی از اکسل وارد شد.`);
+    closeExcelModal();
+
+    // Attributes whose keys already existed were not re-created — they were
+    // only assigned to their categories.
+    const existingCount = created.existingKeys?.length || 0;
+    if (existingCount > 0) {
+      toast.success(
+        `${created.count} ویژگی جدید ایجاد شد و ${existingCount} ویژگی موجود به دسته‌بندی‌ها متصل شد.`,
+      );
+    } else {
+      toast.success(`${created.count} ویژگی از اکسل وارد شد.`);
+    }
   };
 
   // Fetch categories
@@ -531,5 +662,27 @@
 
   .excel-input {
     display: none;
+  }
+
+  .excel-modal-hint {
+    margin: 0 0 20px;
+    font-size: 14px;
+    color: #4b5563;
+    line-height: 1.8;
+  }
+
+  .excel-modal-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .excel-modal-actions button {
+    justify-content: center;
+  }
+
+  .btn-success:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
   }
 </style>
