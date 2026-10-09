@@ -297,8 +297,8 @@
         return;
       }
 
-      if (!['text', 'select'].includes(type)) {
-        toast.error(`سطر ${index + 2}: نوع باید text یا select باشد.`);
+      if (!['text', 'textarea', 'select'].includes(type)) {
+        toast.error(`سطر ${index + 2}: نوع باید text، textarea یا select باشد.`);
         return;
       }
 

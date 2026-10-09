@@ -122,6 +122,7 @@
                     <label class="field-label">نوع</label>
                     <select v-model="editType" class="type-select">
                       <option value="text">متن</option>
+                      <option value="textarea">متن بلند</option>
                       <option value="select">گزینش</option>
                     </select>
                     <span v-if="editOptionsError" class="field-error">{{
@@ -423,6 +424,7 @@
                   <label class="field-label">نوع</label>
                   <select v-model="newType" class="type-select">
                     <option value="text">متن</option>
+                    <option value="textarea">متن بلند</option>
                     <option value="select">گزینش</option>
                   </select>
                   <span v-if="optionsError" class="field-error">{{
@@ -818,6 +820,8 @@
     switch (type) {
       case 'text':
         return 'متن';
+      case 'textarea':
+        return 'متن بلند';
       case 'select':
         return 'گزینش';
       default:
