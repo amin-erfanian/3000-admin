@@ -156,6 +156,7 @@
     'options',
     'placeholder',
     'required',
+    'showToBuyer',
   ];
 
   const openExcelModal = () => {
@@ -188,6 +189,7 @@
       options: '',
       placeholder: '',
       required: '',
+      showToBuyer: '',
     }));
 
     const sheet = XLSX.utils.json_to_sheet(rows, {
@@ -218,6 +220,15 @@
     return v === 'true' || v === 'بله' || v === '1' || v === 'yes';
   };
 
+  // showToBuyer: 1 is true, 0 is false, an empty cell defaults to true.
+  // Returns null for any other value.
+  const parseShowToBuyer = (value) => {
+    const v = String(value ?? '').trim();
+    if (!v || v === '1') return true;
+    if (v === '0') return false;
+    return null;
+  };
+
   const onExcelFile = async (event) => {
     const file = event.target.files?.[0];
     // Allow selecting the same file again after a failed import.
@@ -244,6 +255,10 @@
     const headers = Object.keys(rows[0]);
     const mapped = Object.fromEntries(
       headers.map((h) => [String(h).trim(), h]).filter(([prop]) => prop),
+    );
+    // Match the showToBuyer column regardless of letter case.
+    const showToBuyerHeader = headers.find(
+      (h) => String(h).trim().toLowerCase() === 'showtobuyer',
     );
 
     if (
@@ -319,6 +334,14 @@
         return;
       }
 
+      const showToBuyer = showToBuyerHeader
+        ? parseShowToBuyer(row[showToBuyerHeader])
+        : true;
+      if (showToBuyer === null) {
+        toast.error(`سطر ${index + 2}: مقدار «showToBuyer» باید 0 یا 1 باشد.`);
+        return;
+      }
+
       const attribute = {
         key,
         label,
@@ -329,6 +352,7 @@
           ? String(row[mapped.placeholder] ?? '').trim()
           : '',
         required: mapped.required ? parseRequired(row[mapped.required]) : false,
+        showToBuyer,
         categoryIds: [categoryId],
       };
       attributesByKey.set(key, attribute);
