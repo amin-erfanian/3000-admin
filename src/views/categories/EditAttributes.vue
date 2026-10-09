@@ -138,6 +138,14 @@
                     </select>
                   </div>
                 </div>
+                <div class="col col-show-in-buyer" data-label="نمایش به خریدار">
+                  <div class="field-cell">
+                    <label class="field-label">نمایش به خریدار</label>
+                    <label class="checkbox-box">
+                      <input type="checkbox" v-model="editShowToBuyer" />
+                    </label>
+                  </div>
+                </div>
                 <div class="col col-actions">
                   <button
                     @click="saveEdit(attr, index)"
@@ -246,6 +254,18 @@
                     <span class="field-value">{{
                       attr.required ? 'الزامی' : 'اختیاری'
                     }}</span>
+                  </div>
+                </div>
+                <div class="col col-show-in-buyer" data-label="نمایش به خریدار">
+                  <div class="field-cell">
+                    <label class="field-label">نمایش به خریدار</label>
+                    <label class="checkbox-box">
+                      <input
+                        type="checkbox"
+                        :checked="attr.showToBuyer"
+                        disabled
+                      />
+                    </label>
                   </div>
                 </div>
                 <div class="col col-actions">
@@ -417,6 +437,14 @@
                     <option :value="true">الزامی</option>
                     <option :value="false">اختیاری</option>
                   </select>
+                </div>
+              </div>
+              <div class="col col-show-in-buyer" data-label="نمایش به خریدار">
+                <div class="field-cell">
+                  <label class="field-label">نمایش به خریدار</label>
+                  <label class="checkbox-box">
+                    <input type="checkbox" v-model="newShowToBuyer" />
+                  </label>
                 </div>
               </div>
               <div class="col col-actions">
@@ -592,6 +620,7 @@
   const newRowError = ref(null);
   const newHeader = ref('');
   const newRequired = ref(true);
+  const newShowToBuyer = ref(true);
   const newType = ref('text');
   const newOptions = ref([]);
   const optionsError = ref(null);
@@ -673,6 +702,7 @@
   const editPlaceholder = ref('');
   const editType = ref('text');
   const editRequired = ref(true);
+  const editShowToBuyer = ref(true);
   const editOptions = ref([]);
   const editLabelError = ref(null);
   const editOptionsError = ref(null);
@@ -692,6 +722,7 @@
     editPlaceholder.value = attr.placeholder || '';
     editType.value = attr.type || 'text';
     editRequired.value = !!attr.required;
+    editShowToBuyer.value = attr.showToBuyer !== false;
     editOptions.value = [...(attr.options || [])];
     editLabelError.value = null;
     editOptionsError.value = null;
@@ -745,6 +776,7 @@
       type: editType.value,
       options: editType.value === 'select' ? options : [],
       required: editRequired.value,
+      showToBuyer: editShowToBuyer.value,
     });
 
     if (!updated) return; // error handled by usePromise
@@ -759,6 +791,7 @@
       type: updated.type || editType.value,
       options: updated.options || options,
       required: updated.required ?? editRequired.value,
+      showToBuyer: updated.showToBuyer ?? editShowToBuyer.value,
     });
 
     cancelEdit();
@@ -839,6 +872,7 @@
         type: attr.type || 'text',
         options: attr.options || [],
         required: !!attr.required,
+        showToBuyer: attr.showToBuyer !== false,
       });
     }
 
@@ -872,6 +906,7 @@
     resetForm({ values: { key: '', label: '', placeholder: '' } });
     newHeader.value = '';
     newRequired.value = true;
+    newShowToBuyer.value = true;
     newType.value = 'text';
     newOptions.value = [];
     touchedOptions.value = new Set();
@@ -922,6 +957,7 @@
       type: newType.value,
       options: newType.value === 'select' ? options : [],
       required: newRequired.value,
+      showToBuyer: newShowToBuyer.value,
     });
 
     if (!created) return; // error handled by usePromise
@@ -935,6 +971,7 @@
       type: created.type || 'text',
       options: created.options || [],
       required: !!created.required,
+      showToBuyer: created.showToBuyer ?? newShowToBuyer.value,
     });
 
     cancelNewRow();
@@ -975,6 +1012,7 @@
       type: attr.type || 'text',
       options: attr.options || [],
       required: !!attr.required,
+      showToBuyer: attr.showToBuyer !== false,
     }));
     toast.success('ویژگی‌های دسته‌بندی با موفقیت ذخیره شد.');
   };
@@ -996,6 +1034,7 @@
           type: attr.type || 'text',
           options: attr.options || [],
           required: !!attr.required,
+          showToBuyer: attr.showToBuyer !== false,
         }));
       }
     });
@@ -1116,7 +1155,7 @@
   }
 
   .form-row-secondary {
-    grid-template-columns: 1fr 1fr 1fr auto;
+    grid-template-columns: 1fr 1fr 1fr auto auto;
   }
 
   .table-new {
@@ -1253,6 +1292,29 @@
   .col-actions {
     justify-content: flex-end;
     gap: 8px;
+  }
+
+  /* Checkbox wrapped in a box matching the inputs' height/border */
+  .checkbox-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 7px 10px;
+    cursor: pointer;
+  }
+
+  .checkbox-box input {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    cursor: pointer;
+  }
+
+  .checkbox-box input:disabled {
+    cursor: default;
   }
 
   .btn-primary {
