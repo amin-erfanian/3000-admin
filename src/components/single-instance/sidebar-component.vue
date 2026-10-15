@@ -46,6 +46,11 @@
       link: '/products',
     },
     {
+      label: 'درخواست‌های قیمت مرجع',
+      icon: 'coin',
+      link: '/reference-prices',
+    },
+    {
       label: 'مدیریت دسته‌بندی‌ها',
       icon: 'category',
       link: '/categories',

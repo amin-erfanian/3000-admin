@@ -36,7 +36,7 @@
           :key="item._id || item.id"
           :product="item"
           @approve="handleApprove"
-          @reject="handleReject"
+          @reference-price-updated="execute({ ...route.query })"
         />
       </template>
 
@@ -56,11 +56,11 @@
 <script setup>
   import { ref, onMounted, computed } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
+  import { toast } from 'vue3-toastify';
   import { usePromise } from '@/composables';
   import {
     getProductList,
     approveProduct,
-    rejectProduct,
   } from '@/services/product.service';
   import { PRODUCT_FILTER_ITEMS } from '@/constants/filters';
   import Search from '@/components/general/search.vue';
@@ -75,8 +75,8 @@
   const searchQuery = ref(route.query.keyword ?? '');
 
   const { data: productList, loading, execute } = usePromise(getProductList);
-  const { execute: approveExecute } = usePromise(approveProduct);
-  const { execute: rejectExecute } = usePromise(rejectProduct);
+  const { execute: approveExecute, isRejected: approveFailed } =
+    usePromise(approveProduct);
 
   onMounted(() => execute({ ...route.query }));
 
@@ -107,11 +107,10 @@
 
   async function handleApprove({ productId }) {
     await approveExecute(productId);
-    execute({ ...route.query });
-  }
+    // error toast handled by the http interceptor
+    if (approveFailed.value) return;
 
-  async function handleReject({ productId, reason, propertyKeys }) {
-    await rejectExecute(productId, { reason, propertyKeys });
+    toast.success('کالا با موفقیت تایید شد');
     execute({ ...route.query });
   }
 </script>

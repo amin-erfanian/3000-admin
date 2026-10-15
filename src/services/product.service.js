@@ -24,10 +24,30 @@ export const rejectProduct = (productId, payload) => {
   return http.post(`/admin/products/${productId}/reject`, payload);
 };
 
+export const getReferencePriceRequests = (params) => {
+  return http.get('/admin/products/reference-price-requests', { params });
+};
+
+export const updateReferencePrice = (productId, referencePrice) => {
+  return http.put(`/admin/products/${productId}/reference-price`, {
+    referencePrice,
+  });
+};
+
+export const markReferencePriceRequestsWatched = (productId, requestIds) => {
+  return http.patch(
+    `/admin/products/${productId}/reference-price-requests/watched`,
+    { requestIds },
+  );
+};
+
 export default {
   getProductList,
   getProduct,
   createProduct,
   approveProduct,
   rejectProduct,
+  getReferencePriceRequests,
+  updateReferencePrice,
+  markReferencePriceRequestsWatched,
 };

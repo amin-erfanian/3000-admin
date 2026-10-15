@@ -9,14 +9,27 @@
     </div>
 
     <div class="filter__items">
-      <BaseTextInput
-        v-for="(item, i) in filterItems"
-        :key="i"
-        :placeholder="item.label"
-        v-model="localFilter[item.key]"
-        type="text"
-        variant="outlined"
-      />
+      <template v-for="(item, i) in filterItems" :key="i">
+        <button
+          v-if="item.type === 'toggle'"
+          type="button"
+          class="filter__toggle"
+          :class="{
+            'filter__toggle--active': localFilter[item.key] === item.value,
+          }"
+          :aria-pressed="localFilter[item.key] === item.value"
+          @click="toggleFilter(item)"
+        >
+          {{ item.label }}
+        </button>
+        <BaseTextInput
+          v-else
+          :placeholder="item.label"
+          v-model="localFilter[item.key]"
+          type="text"
+          variant="outlined"
+        />
+      </template>
     </div>
 
     <div class="filter__actions">
@@ -54,6 +67,7 @@
 
   function applyFilters() {
     const query = { ...route.query };
+    delete query.page;
     props.filterItems.forEach(({ key }) => {
       if (localFilter[key]) query[key] = localFilter[key];
       else delete query[key];
@@ -62,8 +76,14 @@
     emit('search', { ...query });
   }
 
+  function toggleFilter({ key, value }) {
+    localFilter[key] = localFilter[key] === value ? '' : value;
+    applyFilters();
+  }
+
   function clearFilters() {
     const query = { ...route.query };
+    delete query.page;
     props.filterItems.forEach(({ key }) => {
       localFilter[key] = '';
       delete query[key];
@@ -94,7 +114,30 @@
 
     &__items {
       display: flex;
+      align-items: center;
       gap: 12px;
+    }
+
+    // matches the `small` outlined BaseTextInput
+    &__toggle {
+      box-sizing: border-box;
+      width: 100%;
+      min-height: 40px;
+      padding: space(1) space(3);
+      border: 1px solid var(--palette-border-20);
+      border-radius: $radius-2x;
+      background-color: transparent;
+      color: var(--palette-text-on-main-20);
+      @include typography(body-medium);
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &--active {
+        background-color: var(--palette-primary);
+        border-color: var(--palette-primary);
+        color: #fafafa;
+      }
     }
 
     &__actions {

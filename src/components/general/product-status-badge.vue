@@ -14,57 +14,65 @@
     },
   });
 
+  // statuses shared by the product and brand models
   const config = {
-    draft: {
-      label: 'پیش نویس',
-      class: 'badge-gray',
+    approved: {
+      label: 'تایید شده',
+      class: 'status-badge--success',
     },
     pending: {
-      label: 'آماده انتشار',
-      class: 'badge-yellow',
+      label: 'در انتظار تایید',
+      class: 'status-badge--warning',
     },
-    active: {
-      label: 'تایید شده',
-      class: 'badge-green',
-    },
-    inactive: {
+    rejected: {
       label: 'رد شده',
-      class: 'badge-red',
+      class: 'status-badge--error',
+    },
+    draft: {
+      label: 'پیش‌نویس',
+      class: 'status-badge--neutral',
     },
   };
 
-  const badge = computed(() => config[props.status] || config.draft);
+  const badge = computed(
+    () =>
+      config[props.status] || {
+        label: props.status,
+        class: 'status-badge--neutral',
+      },
+  );
 
   const label = computed(() => badge.value.label);
   const badgeClass = computed(() => `status-badge ${badge.value.class}`);
 </script>
 
-<style scoped>
+<style scoped lang="scss">
   .status-badge {
     padding: 4px 10px;
     border-radius: 999px;
     font-size: 12px;
     font-weight: 600;
     display: inline-block;
-  }
+    white-space: nowrap;
 
-  .badge-gray {
-    background: #f3f4f6;
-    color: #374151;
-  }
+    &--success {
+      color: var(--palette-success-shade);
+      background: rgba(var(--palette-success-rgb), 0.15);
+    }
 
-  .badge-yellow {
-    background: #fef3c7;
-    color: #92400e;
-  }
+    &--warning {
+      color: var(--palette-warning);
+      background: color-mix(in srgb, var(--palette-warning) 15%, transparent);
+    }
 
-  .badge-green {
-    background: #dcfce7;
-    color: #166534;
-  }
+    &--error {
+      color: var(--palette-error);
+      background: rgba(var(--palette-error-rgb), 0.12);
+    }
 
-  .badge-red {
-    background: #fee2e2;
-    color: #991b1b;
+    &--neutral {
+      color: var(--palette-text-on-main-30);
+      background: var(--palette-text-on-minor-40);
+    }
   }
 </style>

@@ -1,6 +1,6 @@
 <template>
   <div class="field-wrapper">
-    <BaseLabel :label="label" :required="required" />
+    <BaseLabel v-if="label || required" :label="label" :required="required" />
     <div
       class="field-wrapper__field field"
       :class="[fieldVariant, fieldSize, hasError]"

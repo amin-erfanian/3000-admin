@@ -55,9 +55,19 @@
 
           <div class="product-details-card__field">
             <span class="product-details-card__label">قیمت مرجع (ریال)</span>
-            <span class="product-details-card__value">{{
-              product.referencePrice || '—'
-            }}</span>
+            <span
+              class="product-details-card__value product-details-card__value--editable"
+            >
+              {{ formatPrice(product.referencePrice) }}
+              <button
+                type="button"
+                class="product-details-card__edit"
+                aria-label="ویرایش قیمت مرجع"
+                @click="showReferencePriceModal = true"
+              >
+                <BaseIcon iconName="edit" />
+              </button>
+            </span>
           </div>
 
           <div class="product-details-card__field">
@@ -92,20 +102,13 @@
         <div class="product-details-card__actions">
           <BaseButton
             size="small"
-            variant="outlined"
-            class="product-details-card__action product-details-card__action--reject"
-            @click="showRejectionModal = true"
-          >
-            رد کالا
-          </BaseButton>
-          <BaseButton
-            size="small"
             class="product-details-card__action"
             @click="goToProductPage"
           >
-            مشخصات کالا
+            {{ isPending ? 'مشاهده و رد کالا' : 'مشخصات کالا' }}
           </BaseButton>
           <BaseButton
+            v-if="isPending"
             size="small"
             class="product-details-card__action product-details-card__action--approve"
             @click="approveProduct"
@@ -116,11 +119,10 @@
       </div>
     </div>
 
-    <ProductRejectionModal
-      v-model="showRejectionModal"
+    <ReferencePriceModal
+      v-model="showReferencePriceModal"
       :product="product"
-      :property-options="rejectionPropertyOptions"
-      @submit="submitRejection"
+      @updated="emit('reference-price-updated', $event)"
     />
   </div>
 </template>
@@ -130,9 +132,10 @@
   import { useRouter } from 'vue-router';
 
   import BaseButton from '@/components/common/base/base-button.vue';
+  import BaseIcon from '@/components/common/base/base-icon.vue';
   import ProductStatusBadge from '@/components/general/product-status-badge.vue';
   import ProductMediaSlider from '@/components/general/product-media-slider.vue';
-  import ProductRejectionModal from '@/components/general/product-rejection-modal.vue';
+  import ReferencePriceModal from '@/components/general/reference-price-modal.vue';
 
   const props = defineProps({
     product: {
@@ -140,22 +143,16 @@
       required: true,
     },
   });
-  const emit = defineEmits(['approve', 'reject']);
+  const emit = defineEmits(['approve', 'reference-price-updated']);
 
   const router = useRouter();
 
-  const showRejectionModal = ref(false);
+  const showReferencePriceModal = ref(false);
 
-  const rejectionPropertyOptions = computed(() => [
-    { name: 'عنوان کالا', value: 'titleFa' },
-    { name: 'برند', value: 'brand' },
-    { name: 'دسته‌بندی', value: 'category' },
-    { name: 'کمیسیون', value: 'commission' },
-    { name: 'ابعاد', value: 'dimensions' },
-    { name: 'اصالت کالا', value: 'properties.isFake' },
-    { name: 'وزن', value: 'weight' },
-    { name: 'تصاویر', value: 'images' },
-  ]);
+  const isPending = computed(() => props.product.status === 'pending');
+
+  const formatPrice = (value) =>
+    value ? Number(value).toLocaleString('fa-IR') : '—';
 
   const normalizeValue = (value) => {
     if (value === null || value === undefined || value === '') return '—';
@@ -223,14 +220,6 @@
     router.push({
       name: 'product-details',
       params: { id: props.product._id || props.product.id },
-    });
-  };
-
-  const submitRejection = ({ selectedProperties, hint }) => {
-    emit('reject', {
-      productId: props.product._id || props.product.id,
-      reason: hint,
-      propertyKeys: selectedProperties.map((item) => item.value),
     });
   };
 </script>
@@ -306,6 +295,22 @@
       @include typography(body-medium);
       color: var(--palette-text-on-main-20);
       word-break: break-word;
+
+      &--editable {
+        @include flex($align: center);
+        gap: space(2);
+      }
+    }
+
+    &__edit {
+      @include flex($align: center, $justify: center);
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      border: none;
+      background: none;
+      color: var(--palette-primary);
+      cursor: pointer;
     }
 
     &__actions {
@@ -323,11 +328,6 @@
 
     &__action {
       min-width: 120px;
-
-      &--reject {
-        color: var(--palette-error);
-        border-color: var(--palette-error);
-      }
 
       &--approve {
         background-color: var(--palette-success);

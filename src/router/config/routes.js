@@ -40,6 +40,16 @@ const ROUTES = [
     },
   },
   {
+    name: 'reference-prices',
+    path: '/reference-prices',
+    component: () => import('@/views/reference-prices/index.vue'),
+    meta: {
+      layout: 'main',
+      title: 'درخواست‌های قیمت مرجع',
+      authRequired: true,
+    },
+  },
+  {
     name: 'categories',
     path: '/categories',
     component: () => import('@/views/categories/index.vue'),

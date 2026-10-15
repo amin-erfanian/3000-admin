@@ -14,6 +14,12 @@ export const PRODUCT_FILTER_ITEMS = [
     type: 'text',
     key: 'title',
   },
+  {
+    label: 'در انتظار تایید',
+    type: 'toggle',
+    key: 'status',
+    value: 'pending',
+  },
 ];
 
 export const BRAND_FILTER_ITEMS = [
