@@ -1,13 +1,15 @@
 import adminService from '@/services/admin.service';
 import { toast } from 'vue3-toastify';
 
-import { useRouter } from 'vue-router';
-const router = useRouter();
+import router from '@/router';
 
 export default {
   async signIn(payload) {
     try {
-      await adminService.signIn(payload);
+      const { profile } = await adminService.signIn(payload);
+      // auth token lives in an httpOnly cookie; this flag only tells the router guard we're signed in
+      localStorage.setItem('isLoggedIn', 'true');
+      this.$patch({ isLoggedIn: true, profile: profile ?? {} });
     } catch (error) {
       toast.error(error.message);
       throw error;
@@ -15,7 +17,7 @@ export default {
   },
 
   async logout() {
-    localStorage.removeItem('token');
+    localStorage.removeItem('isLoggedIn');
     this.resetLoginData();
     router.push('/sign-in');
   },

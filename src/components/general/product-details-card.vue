@@ -108,6 +108,15 @@
             {{ isPending ? 'مشاهده و رد کالا' : 'مشخصات کالا' }}
           </BaseButton>
           <BaseButton
+            size="small"
+            variant="outlined"
+            class="product-details-card__action"
+            :disabled="!variantsCount"
+            @click="goToVariantsPage"
+          >
+            تنوع‌های کالا ({{ variantsCount.toLocaleString('fa-IR') }})
+          </BaseButton>
+          <BaseButton
             v-if="isPending"
             size="small"
             class="product-details-card__action product-details-card__action--approve"
@@ -150,6 +159,7 @@
   const showReferencePriceModal = ref(false);
 
   const isPending = computed(() => props.product.status === 'pending');
+  const variantsCount = computed(() => props.product.variantsCount ?? 0);
 
   const formatPrice = (value) =>
     value ? Number(value).toLocaleString('fa-IR') : '—';
@@ -219,6 +229,13 @@
   const goToProductPage = () => {
     router.push({
       name: 'product-details',
+      params: { id: props.product._id || props.product.id },
+    });
+  };
+
+  const goToVariantsPage = () => {
+    router.push({
+      name: 'product-variants',
       params: { id: props.product._id || props.product.id },
     });
   };

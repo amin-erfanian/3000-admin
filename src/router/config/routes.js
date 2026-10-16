@@ -40,6 +40,16 @@ const ROUTES = [
     },
   },
   {
+    name: 'product-variants',
+    path: '/products/:id/variants',
+    component: () => import('@/views/products/variants.vue'),
+    meta: {
+      layout: 'main',
+      title: 'تنوع‌های کالا',
+      authRequired: true,
+    },
+  },
+  {
     name: 'reference-prices',
     path: '/reference-prices',
     component: () => import('@/views/reference-prices/index.vue'),
@@ -76,6 +86,16 @@ const ROUTES = [
     meta: {
       layout: 'main',
       title: 'مدیریت برندها',
+      authRequired: true,
+    },
+  },
+  {
+    name: 'warranties',
+    path: '/warranties',
+    component: () => import('@/views/warranties/index.vue'),
+    meta: {
+      layout: 'main',
+      title: 'مدیریت گارانتی‌ها',
       authRequired: true,
     },
   },

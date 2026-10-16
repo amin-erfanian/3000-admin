@@ -8,6 +8,10 @@ export const getProduct = (productId) => {
   return http.get(`/admin/products/${productId}`);
 };
 
+export const getProductVariants = (productId) => {
+  return http.get(`/admin/products/${productId}/variants`);
+};
+
 export const getSellerProductList = (params) => {
   return http.get('/products/seller', { params });
 };
@@ -44,6 +48,7 @@ export const markReferencePriceRequestsWatched = (productId, requestIds) => {
 export default {
   getProductList,
   getProduct,
+  getProductVariants,
   createProduct,
   approveProduct,
   rejectProduct,

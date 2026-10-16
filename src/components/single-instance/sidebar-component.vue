@@ -61,6 +61,11 @@
       link: '/brands',
     },
     {
+      label: 'مدیریت گارانتی‌ها',
+      icon: 'warranty',
+      link: '/warranties',
+    },
+    {
       label: 'هزینه پردازش',
       icon: 'process',
       link: '/process',

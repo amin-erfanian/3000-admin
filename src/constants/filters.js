@@ -88,3 +88,12 @@ export const SELLER_FILTER_ITEMS = [
     ],
   },
 ];
+
+export const WARRANTY_FILTER_ITEMS = [
+  {
+    label: 'در انتظار تایید',
+    type: 'toggle',
+    key: 'status',
+    value: 'pending',
+  },
+];

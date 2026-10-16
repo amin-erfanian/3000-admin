@@ -4,9 +4,12 @@ const AUTH_ROUTES = ['sign-in'];
 const beforeEach = (to) => {
   const adminStore = useAdminStore();
 
-  const hasToken = !!localStorage.getItem('token');
+  const hasToken = localStorage.getItem('isLoggedIn') === 'true';
 
-  if (!hasToken) adminStore.logout();
+  if (!hasToken && !AUTH_ROUTES.includes(to.name)) {
+    adminStore.resetLoginData();
+    return { name: 'sign-in' };
+  }
 
   if (hasToken && AUTH_ROUTES.includes(to.name)) {
     return { path: '/' };

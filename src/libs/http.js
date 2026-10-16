@@ -68,7 +68,7 @@ class HttpService {
       AXIOS_DEFAULT_ERROR.fa;
 
     if (status === 401 || status === 403) {
-      localStorage.removeItem('token');
+      localStorage.removeItem('isLoggedIn');
       router.replace('/sign-in');
     }
 
@@ -99,7 +99,7 @@ class HttpService {
     const { errorNotification = { show: true } } = config;
 
     if (error.status === 401 || status === 403) {
-      localStorage.removeItem('token');
+      localStorage.removeItem('isLoggedIn');
       router.replace('/sign-in');
     }
 
