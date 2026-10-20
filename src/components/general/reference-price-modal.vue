@@ -9,22 +9,21 @@
       </div>
 
       <div class="reference-price-modal__field">
-        <label
-          class="reference-price-modal__label"
-          :for="`reference-price-modal-${productId}`"
-        >
-          قیمت مرجع جدید (ریال)
-        </label>
-        <div class="reference-price-modal__input">
-          <BaseNumberInput
-            v-model="newPrice"
-            :name="`reference-price-modal-${productId}`"
-          />
+        <div class="reference-price-modal__row">
+          <label
+            class="reference-price-modal__label"
+            :for="`reference-price-modal-${productId}`"
+          >
+            قیمت مرجع جدید (ریال)
+          </label>
+          <div class="reference-price-modal__input">
+            <BaseNumberInput
+              v-model="newPrice"
+              :name="`reference-price-modal-${productId}`"
+              separator
+            />
+          </div>
         </div>
-        <span v-if="newPrice" class="reference-price-modal__hint">
-          {{ formatPrice(newPrice) }} ریال — با ثبت قیمت، همه درخواست‌های تغییر
-          قیمت دیده‌شده می‌شوند.
-        </span>
       </div>
 
       <div class="reference-price-modal__actions">
@@ -98,15 +97,23 @@
     gap: space(4);
     width: 100%;
 
-    &__current,
     &__field {
+      width: 100%;
       @include flex(column);
       gap: space(1);
+    }
+
+    &__current,
+    &__row {
+      width: 100%;
+      @include flex($align: center, $justify: space-between);
+      gap: space(3);
     }
 
     &__label {
       @include typography(label-small);
       color: var(--palette-text-on-main-40);
+      white-space: nowrap;
     }
 
     &__value {
@@ -116,19 +123,22 @@
     }
 
     &__input {
+      flex: 0 1 220px;
+      min-width: 0;
       border: 1px solid var(--palette-border-20);
       border-radius: $radius-2x;
       padding: space(2) space(3);
     }
 
-    &__hint {
-      @include typography(body-small);
-      color: var(--palette-text-on-main-30);
-    }
-
     &__actions {
-      @include flex($justify: flex-end, $align: center);
-      gap: space(2);
+      width: 100%;
+      @include flex($align: center);
+      gap: space(4);
+
+      > * {
+        flex: 1 1 0;
+        min-width: 0;
+      }
     }
   }
 </style>

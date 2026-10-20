@@ -36,12 +36,26 @@
           :key="item._id || item.id"
           :product="item"
           @approve="handleApprove"
+          @delete="productToDelete = $event.productId"
           @reference-price-updated="execute({ ...route.query })"
         />
       </template>
 
       <div v-else class="product-list__empty">موردی برای نمایش وجود ندارد.</div>
     </div>
+
+    <ConfirmationModal
+      v-model="showDeleteModal"
+      width="420px"
+      title="آیا از حذف این کالا مطمئن هستید؟"
+      hint="کالا به همراه همه تنوع‌های آن به طور کامل حذف می‌شود و قابل بازگشت نیست."
+      confirm-text="حذف کالا"
+      cancel-text="انصراف"
+      variant="danger"
+      :submit-loading="deleting"
+      @confirm="confirmDelete"
+      @cancel="productToDelete = null"
+    />
 
     <div class="product-list__pagination" v-if="pager">
       <BasePagination
@@ -58,7 +72,12 @@
   import { useRoute, useRouter } from 'vue-router';
   import { toast } from 'vue3-toastify';
   import { usePromise } from '@/composables';
-  import { getProductList, approveProduct } from '@/services/product.service';
+  import {
+    getProductList,
+    approveProduct,
+    deleteProduct,
+  } from '@/services/product.service';
+  import ConfirmationModal from '@/components/general/confirmation-modal.vue';
   import { PRODUCT_FILTER_ITEMS } from '@/constants/filters';
   import Search from '@/components/general/search.vue';
   import ProductFilter from '@/components/general/product-filter.vue';
@@ -108,6 +127,33 @@
     if (approveFailed.value) return;
 
     toast.success('کالا با موفقیت تایید شد');
+    execute({ ...route.query });
+  }
+
+  // delete
+
+  const productToDelete = ref(null);
+
+  const showDeleteModal = computed({
+    get: () => !!productToDelete.value,
+    set: (isOpen) => {
+      if (!isOpen) productToDelete.value = null;
+    },
+  });
+
+  const {
+    execute: deleteExecute,
+    isRejected: deleteFailed,
+    loading: deleting,
+  } = usePromise(deleteProduct);
+
+  async function confirmDelete() {
+    await deleteExecute(productToDelete.value);
+    // error toast handled by the http interceptor
+    if (deleteFailed.value) return;
+
+    toast.success('کالا با موفقیت حذف شد');
+    productToDelete.value = null;
     execute({ ...route.query });
   }
 </script>

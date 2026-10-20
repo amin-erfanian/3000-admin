@@ -98,34 +98,41 @@
             }}</span>
           </div>
         </div>
-
-        <div class="product-details-card__actions">
-          <BaseButton
-            size="small"
-            class="product-details-card__action"
-            @click="goToProductPage"
-          >
-            {{ isPending ? 'مشاهده و رد کالا' : 'مشخصات کالا' }}
-          </BaseButton>
-          <BaseButton
-            size="small"
-            variant="outlined"
-            class="product-details-card__action"
-            :disabled="!variantsCount"
-            @click="goToVariantsPage"
-          >
-            تنوع‌های کالا ({{ variantsCount.toLocaleString('fa-IR') }})
-          </BaseButton>
-          <BaseButton
-            v-if="isPending"
-            size="small"
-            class="product-details-card__action product-details-card__action--approve"
-            @click="approveProduct"
-          >
-            تایید کالا
-          </BaseButton>
-        </div>
       </div>
+    </div>
+
+    <div class="product-details-card__actions">
+      <BaseButton
+        size="small"
+        class="product-details-card__action product-details-card__action--delete"
+        @click="emit('delete', { productId: product._id || product.id })"
+      >
+        حذف کالا
+      </BaseButton>
+      <BaseButton
+        size="small"
+        variant="outlined"
+        class="product-details-card__action"
+        :disabled="!variantsCount"
+        @click="goToVariantsPage"
+      >
+        تنوع‌های کالا ({{ variantsCount.toLocaleString('fa-IR') }})
+      </BaseButton>
+      <BaseButton
+        size="small"
+        class="product-details-card__action"
+        @click="goToProductPage"
+      >
+        {{ isPending ? 'بررسی و عملیات' : 'مشخصات کالا' }}
+      </BaseButton>
+      <BaseButton
+        v-if="isPending"
+        size="small"
+        class="product-details-card__action product-details-card__action--approve"
+        @click="approveProduct"
+      >
+        تایید کالا
+      </BaseButton>
     </div>
 
     <ReferencePriceModal
@@ -152,7 +159,7 @@
       required: true,
     },
   });
-  const emit = defineEmits(['approve', 'reference-price-updated']);
+  const emit = defineEmits(['approve', 'delete', 'reference-price-updated']);
 
   const router = useRouter();
 
@@ -334,7 +341,8 @@
       width: 100%;
       @include flex($align: center, $justify: flex-end);
       gap: space(2);
-      margin-top: space(2);
+      padding-top: space(3);
+      border-top: 1px solid var(--palette-border-10);
     }
 
     &__details {
@@ -348,6 +356,12 @@
 
       &--approve {
         background-color: var(--palette-success);
+      }
+
+      // pushed to the start (right side in RTL), away from the other actions
+      &--delete {
+        background-color: var(--palette-error);
+        margin-inline-end: auto;
       }
     }
   }

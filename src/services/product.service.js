@@ -28,6 +28,10 @@ export const rejectProduct = (productId, payload) => {
   return http.post(`/admin/products/${productId}/reject`, payload);
 };
 
+export const deleteProduct = (productId) => {
+  return http.delete(`/admin/products/${productId}`);
+};
+
 export const getReferencePriceRequests = (params) => {
   return http.get('/admin/products/reference-price-requests', { params });
 };
@@ -52,6 +56,7 @@ export default {
   createProduct,
   approveProduct,
   rejectProduct,
+  deleteProduct,
   getReferencePriceRequests,
   updateReferencePrice,
   markReferencePriceRequestsWatched,

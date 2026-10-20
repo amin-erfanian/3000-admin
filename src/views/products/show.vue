@@ -12,8 +12,28 @@
           ({{ product.titleEn }})
         </span>
         <ProductStatusBadge :status="product.status || 'draft'" />
+        <BaseButton
+          size="small"
+          class="product-details__delete-button"
+          @click="showDeleteModal = true"
+        >
+          حذف کالا
+        </BaseButton>
       </template>
     </div>
+
+    <ConfirmationModal
+      v-model="showDeleteModal"
+      width="420px"
+      title="آیا از حذف این کالا مطمئن هستید؟"
+      hint="کالا به همراه همه تنوع‌های آن به طور کامل حذف می‌شود و قابل بازگشت نیست."
+      confirm-text="حذف کالا"
+      cancel-text="انصراف"
+      variant="danger"
+      :submit-loading="deleting"
+      @confirm="confirmDelete"
+      @cancel="showDeleteModal = false"
+    />
 
     <template v-if="loading">
       <div class="product-details__skeletons">
@@ -119,7 +139,7 @@
           <p class="product-details__description">{{ product.description }}</p>
         </section>
 
-        <section class="product-details__section">
+        <!-- <section class="product-details__section">
           <h3 class="product-details__section-title">وضعیت بررسی</h3>
           <div
             v-if="product.rejectionReasons?.length"
@@ -139,7 +159,7 @@
           <span v-else class="product-details__value">
             دلیل ردی ثبت نشده است.
           </span>
-        </section>
+        </section> -->
 
         <section
           v-if="canReject"
@@ -194,6 +214,36 @@
             </BaseButton>
           </div>
         </section>
+
+        <section
+          v-if="canReject"
+          class="product-details__section product-details__approval"
+          :class="{
+            'product-details__approval--disabled': !!rejectionReasons.length,
+          }"
+        >
+          <h3 class="product-details__section-title">تایید کالا</h3>
+
+          <span class="product-details__rejection-empty">
+            {{
+              rejectionReasons.length
+                ? 'برای تایید کالا، ابتدا موارد رد شده را حذف کنید.'
+                : 'در صورت صحت همه اطلاعات، کالا را تایید کنید.'
+            }}
+          </span>
+
+          <div class="product-details__rejection-actions">
+            <BaseButton
+              size="small"
+              class="product-details__approve-button"
+              :disabled="!!rejectionReasons.length"
+              :is-loading="approving"
+              @click="submitApproval"
+            >
+              تایید کالا
+            </BaseButton>
+          </div>
+        </section>
       </div>
 
       <ReferencePriceModal
@@ -210,7 +260,12 @@
   import { useRoute, useRouter } from 'vue-router';
   import { toast } from 'vue3-toastify';
   import { usePromise } from '@/composables';
-  import { getProduct, rejectProduct } from '@/services/product.service';
+  import {
+    getProduct,
+    approveProduct,
+    rejectProduct,
+    deleteProduct,
+  } from '@/services/product.service';
   import BaseIcon from '@/components/common/base/base-icon.vue';
   import BaseButton from '@/components/common/base/base-button.vue';
   import BaseSkeleton from '@/components/common/base/base-skeleton.vue';
@@ -219,6 +274,7 @@
   import ProductMediaSlider from '@/components/general/product-media-slider.vue';
   import ReferencePriceModal from '@/components/general/reference-price-modal.vue';
   import RejectToggle from '@/components/general/reject-toggle.vue';
+  import ConfirmationModal from '@/components/general/confirmation-modal.vue';
 
   const route = useRoute();
   const router = useRouter();
@@ -236,8 +292,30 @@
     isRejected: rejectFailed,
     execute: rejectExecute,
   } = usePromise(rejectProduct);
+  const {
+    loading: approving,
+    isRejected: approveFailed,
+    execute: approveExecute,
+  } = usePromise(approveProduct);
+  const {
+    loading: deleting,
+    isRejected: deleteFailed,
+    execute: deleteExecute,
+  } = usePromise(deleteProduct);
 
   onMounted(() => fetchProduct(route.params.id));
+
+  const showDeleteModal = ref(false);
+
+  const confirmDelete = async () => {
+    await deleteExecute(product.value._id);
+    // error toast handled by the http interceptor
+    if (deleteFailed.value) return;
+
+    toast.success('کالا با موفقیت حذف شد');
+    showDeleteModal.value = false;
+    router.push({ name: 'products' });
+  };
 
   // update in place to avoid the full-page skeleton of a refetch
   const handleReferencePriceUpdated = ({ referencePrice }) => {
@@ -413,20 +491,20 @@
       : []),
   ]);
 
-  const propertyLabels = computed(() => {
-    const labels = {
-      images: 'تصاویر',
-      videos: 'ویدیوها',
-      description: 'توضیحات',
-    };
-    fieldSections.value
-      .flatMap((section) => section.fields)
-      .filter((field) => field.property && !labels[field.property])
-      .forEach((field) => {
-        labels[field.property] = field.rejectionLabel || field.label;
-      });
-    return labels;
-  });
+  // const propertyLabels = computed(() => {
+  //   const labels = {
+  //     images: 'تصاویر',
+  //     videos: 'ویدیوها',
+  //     description: 'توضیحات',
+  //   };
+  //   fieldSections.value
+  //     .flatMap((section) => section.fields)
+  //     .filter((field) => field.property && !labels[field.property])
+  //     .forEach((field) => {
+  //       labels[field.property] = field.rejectionLabel || field.label;
+  //     });
+  //   return labels;
+  // });
 
   // rejection
 
@@ -474,6 +552,18 @@
     toast.success('کالا با موفقیت رد شد');
     rejectionReasons.value = [];
     showRejectionErrors.value = false;
+    fetchProduct(route.params.id);
+  };
+
+  // approval is only allowed when no property is marked as rejected
+  const submitApproval = async () => {
+    if (rejectionReasons.value.length) return;
+
+    await approveExecute(product.value._id);
+    // error toast handled by the http interceptor
+    if (approveFailed.value) return;
+
+    toast.success('کالا با موفقیت تایید شد');
     fetchProduct(route.params.id);
   };
 
@@ -742,9 +832,29 @@
       @include flex($justify: flex-end);
     }
 
+    &__delete-button {
+      min-width: 120px;
+      margin-inline-start: auto;
+      background-color: var(--palette-error);
+    }
+
     &__reject-button {
       min-width: 120px;
       background-color: var(--palette-error);
+    }
+
+    &__approval {
+      border-color: var(--palette-success);
+      transition: opacity 0.15s ease;
+
+      &--disabled {
+        opacity: 0.6;
+      }
+    }
+
+    &__approve-button {
+      min-width: 120px;
+      background-color: var(--palette-success);
     }
   }
 </style>

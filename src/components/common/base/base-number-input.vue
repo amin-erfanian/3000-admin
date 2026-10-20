@@ -37,19 +37,46 @@
       type: Boolean,
       default: false,
     },
+    // Show thousands separators in the input; the model value stays plain digits
+    separator: {
+      type: Boolean,
+      default: false,
+    },
   });
 
   const emit = defineEmits(['update:modelValue']);
   const input = ref(null);
 
+  const formatDigits = (value) =>
+    props.separator
+      ? String(value ?? '').replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+      : String(value ?? '');
+
   function handleInput(event) {
     const inputValue = event.target.value;
+    const caret = event.target.selectionStart ?? inputValue.length;
+    // Digits before the caret, used to restore its position after formatting
+    const digitsBeforeCaret = inputValue
+      .slice(0, caret)
+      .replace(/[^۰-۹0-9]/g, '').length;
+
     const filteredValue = inputValue.replace(/[^۰-۹0-9]/g, '');
     const convertedValue = persianToEnglishDigits(filteredValue);
     emit('update:modelValue', convertedValue);
 
-    if (input.value) {
-      input.value.value = convertedValue;
+    if (!input.value) return;
+
+    const formatted = formatDigits(convertedValue);
+    input.value.value = formatted;
+
+    if (props.separator) {
+      let position = 0;
+      let digits = 0;
+      while (position < formatted.length && digits < digitsBeforeCaret) {
+        if (formatted[position] !== ',') digits++;
+        position++;
+      }
+      input.value.setSelectionRange(position, position);
     }
   }
 
@@ -65,7 +92,7 @@
     emit('update:modelValue', newValue);
   }
 
-  const displayValue = computed(() => props.modelValue);
+  const displayValue = computed(() => formatDigits(props.modelValue));
 </script>
 
 <style lang="scss" scoped>

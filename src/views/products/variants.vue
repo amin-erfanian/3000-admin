@@ -43,6 +43,13 @@
               ({{ product.titleEn }})
             </span>
             <ProductStatusBadge :status="product.status || 'draft'" />
+            <BaseButton
+              size="small"
+              class="product-variants__delete product-variants__delete--product"
+              @click="showProductDeleteModal = true"
+            >
+              حذف کالا
+            </BaseButton>
           </div>
 
           <div class="product-variants__fields">
@@ -52,11 +59,33 @@
               class="product-variants__field"
             >
               <span class="product-variants__label">{{ field.label }}</span>
-              <span class="product-variants__value">{{ field.value }}</span>
+              <span
+                v-if="field.editable"
+                class="product-variants__value product-variants__value--editable"
+              >
+                {{ field.value }}
+                <button
+                  type="button"
+                  class="product-variants__edit"
+                  aria-label="ویرایش قیمت مرجع"
+                  @click="showReferencePriceModal = true"
+                >
+                  <BaseIcon iconName="edit" />
+                </button>
+              </span>
+              <span v-else class="product-variants__value">{{
+                field.value
+              }}</span>
             </div>
           </div>
         </div>
       </section>
+
+      <ReferencePriceModal
+        v-model="showReferencePriceModal"
+        :product="product"
+        @updated="handleReferencePriceUpdated"
+      />
 
       <div class="product-variants__list-heading">
         <h3 class="product-variants__section-title">لیست تنوع‌ها</h3>
@@ -102,27 +131,137 @@
               <span class="product-variants__value">{{ field.value }}</span>
             </div>
           </div>
+
+          <div class="product-variants__actions">
+            <BaseButton
+              size="small"
+              class="product-variants__delete"
+              @click="variantToDelete = variant._id"
+            >
+              حذف تنوع
+            </BaseButton>
+          </div>
         </article>
       </div>
+
+      <ConfirmationModal
+        v-model="showDeleteModal"
+        width="420px"
+        title="آیا از حذف این تنوع مطمئن هستید؟"
+        hint="این تنوع به طور کامل حذف می‌شود و قابل بازگشت نیست."
+        confirm-text="حذف تنوع"
+        cancel-text="انصراف"
+        variant="danger"
+        :submit-loading="deleting"
+        @confirm="confirmDelete"
+        @cancel="variantToDelete = null"
+      />
+
+      <ConfirmationModal
+        v-model="showProductDeleteModal"
+        width="420px"
+        title="آیا از حذف این کالا مطمئن هستید؟"
+        hint="کالا به همراه همه تنوع‌های آن به طور کامل حذف می‌شود و قابل بازگشت نیست."
+        confirm-text="حذف کالا"
+        cancel-text="انصراف"
+        variant="danger"
+        :submit-loading="deletingProduct"
+        @confirm="confirmProductDelete"
+        @cancel="showProductDeleteModal = false"
+      />
     </template>
   </div>
 </template>
 
 <script setup>
-  import { computed, onMounted } from 'vue';
+  import { computed, onMounted, ref } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
   import { usePromise } from '@/composables';
-  import { getProductVariants } from '@/services/product.service';
+  import {
+    getProductVariants,
+    deleteProduct,
+  } from '@/services/product.service';
+  import { toast } from 'vue3-toastify';
+  import { getProcessRules } from '@/services/process-rule.service';
+  import { deleteVariant } from '@/services/variant.service';
+  import BaseButton from '@/components/common/base/base-button.vue';
   import BaseIcon from '@/components/common/base/base-icon.vue';
+  import ConfirmationModal from '@/components/general/confirmation-modal.vue';
   import BaseSkeleton from '@/components/common/base/base-skeleton.vue';
   import ProductStatusBadge from '@/components/general/product-status-badge.vue';
+  import ReferencePriceModal from '@/components/general/reference-price-modal.vue';
 
   const route = useRoute();
   const router = useRouter();
 
-  const { data, loading, isRejected, execute } = usePromise(getProductVariants);
+  const showReferencePriceModal = ref(false);
 
-  onMounted(() => execute(route.params.id));
+  const { data, loading, isRejected, execute } = usePromise(getProductVariants);
+  const { data: processRules, execute: fetchProcessRules } =
+    usePromise(getProcessRules);
+
+  onMounted(() => {
+    execute(route.params.id);
+    fetchProcessRules();
+  });
+
+  // update in place to avoid the full-page skeleton of a refetch
+  const handleReferencePriceUpdated = ({ referencePrice }) => {
+    data.value = {
+      ...data.value,
+      product: { ...data.value.product, referencePrice },
+    };
+  };
+
+  // delete
+
+  const variantToDelete = ref(null);
+
+  const showDeleteModal = computed({
+    get: () => !!variantToDelete.value,
+    set: (isOpen) => {
+      if (!isOpen) variantToDelete.value = null;
+    },
+  });
+
+  const {
+    execute: deleteExecute,
+    isRejected: deleteFailed,
+    loading: deleting,
+  } = usePromise(deleteVariant);
+
+  const confirmDelete = async () => {
+    const variantId = variantToDelete.value;
+    await deleteExecute(variantId);
+    // error toast handled by the http interceptor
+    if (deleteFailed.value) return;
+
+    toast.success('تنوع با موفقیت حذف شد');
+    variantToDelete.value = null;
+    // remove in place to avoid the full-page skeleton of a refetch
+    data.value = {
+      ...data.value,
+      items: data.value.items.filter((item) => item._id !== variantId),
+    };
+  };
+
+  const showProductDeleteModal = ref(false);
+
+  const {
+    execute: deleteProductExecute,
+    isRejected: deleteProductFailed,
+    loading: deletingProduct,
+  } = usePromise(deleteProduct);
+
+  const confirmProductDelete = async () => {
+    await deleteProductExecute(product.value._id);
+    // error toast handled by the http interceptor
+    if (deleteProductFailed.value) return;
+
+    toast.success('کالا با موفقیت حذف شد');
+    showProductDeleteModal.value = false;
+    router.push({ name: 'products' });
+  };
 
   // also covers the first render, before the request has started
   const isLoading = computed(
@@ -182,6 +321,24 @@
     return labels.length ? labels.join('، ') : '—';
   };
 
+  // Price of the first active process rule whose ranges contain the product's dimensions
+  const processPrice = computed(() => {
+    const { width, height, length } = product.value?.dimensions || {};
+    if (width == null || height == null || length == null) return null;
+    if (!Array.isArray(processRules.value)) return null;
+
+    const inRange = (val, from, to) => val >= from && val <= to;
+    const rule = processRules.value.find(
+      (r) =>
+        r.isActive !== false &&
+        inRange(width, r.widthFrom, r.widthTo) &&
+        inRange(height, r.heightFrom, r.heightTo) &&
+        inRange(length, r.lengthFrom, r.lengthTo),
+    );
+
+    return rule?.price ?? null;
+  });
+
   const productFields = computed(() => {
     const p = product.value;
     if (!p) return [];
@@ -195,7 +352,12 @@
         value:
           p.category?.commission != null ? `${p.category.commission}%` : '—',
       },
-      { label: 'قیمت مرجع (ریال)', value: formatPrice(p.referencePrice) },
+      {
+        label: 'قیمت مرجع (ریال)',
+        value: formatPrice(p.referencePrice),
+        editable: true,
+      },
+      { label: 'هزینه پردازش (ریال)', value: formatNumber(processPrice.value) },
       { label: 'ثبت‌کننده', value: normalizeValue(p.createdBy?.title) },
       { label: 'کد ثبت‌کننده', value: normalizeValue(p.createdBy?.code) },
     ];
@@ -427,6 +589,36 @@
       @include typography(body-medium);
       color: var(--palette-text-on-main-20);
       word-break: break-word;
+
+      &--editable {
+        @include flex($align: center);
+        gap: space(2);
+      }
+    }
+
+    &__actions {
+      width: 100%;
+      @include flex($align: center);
+    }
+
+    &__delete {
+      min-width: 120px;
+      background-color: var(--palette-error);
+
+      &--product {
+        margin-inline-start: auto;
+      }
+    }
+
+    &__edit {
+      @include flex($align: center, $justify: center);
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      border: none;
+      background: none;
+      color: var(--palette-primary);
+      cursor: pointer;
     }
   }
 </style>

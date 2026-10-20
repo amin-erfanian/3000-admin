@@ -1,5 +1,5 @@
 <template>
-  <base-modal v-model="showModal" width="90%">
+  <base-modal v-model="showModal" :width="width">
     <div class="confirmation-modal__content">
       <h4 class="confirmation-modal__title">{{ title }}</h4>
       <p v-if="hint" class="confirmation-modal__hint"> {{ hint }}</p>
@@ -56,6 +56,10 @@
     hasActions: {
       type: Boolean,
       default: true,
+    },
+    width: {
+      type: String,
+      default: '90%',
     },
   });
 
