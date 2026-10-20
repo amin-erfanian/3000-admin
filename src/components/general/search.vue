@@ -4,7 +4,7 @@
     <BaseTextInput
       v-model="query"
       type="text"
-      placeholder="جستجوی کالا"
+      :placeholder="placeholder"
       name="search"
       variant="outlined"
       prependIcon="search"
@@ -14,6 +14,13 @@
 
 <script setup>
   import BaseTextInput from '../common/base/base-text-input.vue';
+
+  defineProps({
+    placeholder: {
+      type: String,
+      default: 'جستجوی کالا',
+    },
+  });
 
   const query = defineModel();
 </script>

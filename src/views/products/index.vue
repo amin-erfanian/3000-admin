@@ -58,10 +58,7 @@
   import { useRoute, useRouter } from 'vue-router';
   import { toast } from 'vue3-toastify';
   import { usePromise } from '@/composables';
-  import {
-    getProductList,
-    approveProduct,
-  } from '@/services/product.service';
+  import { getProductList, approveProduct } from '@/services/product.service';
   import { PRODUCT_FILTER_ITEMS } from '@/constants/filters';
   import Search from '@/components/general/search.vue';
   import ProductFilter from '@/components/general/product-filter.vue';
@@ -160,6 +157,7 @@
     }
 
     &__empty {
+      width: 100%;
       border: 1px dashed var(--palette-border-10);
       border-radius: $radius-2x;
       padding: space(6);

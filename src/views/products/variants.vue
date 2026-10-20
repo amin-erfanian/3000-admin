@@ -120,8 +120,7 @@
   const route = useRoute();
   const router = useRouter();
 
-  const { data, loading, isRejected, execute } =
-    usePromise(getProductVariants);
+  const { data, loading, isRejected, execute } = usePromise(getProductVariants);
 
   onMounted(() => execute(route.params.id));
 
@@ -169,7 +168,9 @@
     if (!warranty) return '—';
     const { value, unit } = warranty.duration ?? {};
     if (!value) return warranty.name;
-    return `${warranty.name} (${formatNumber(value)} ${DURATION_UNITS[unit] ?? unit})`;
+    return `${warranty.name} (${formatNumber(value)} ${
+      DURATION_UNITS[unit] ?? unit
+    })`;
   };
 
   const shipmentText = (methods = {}) => {
@@ -276,6 +277,7 @@
 
     &__error,
     &__empty {
+      width: 100%;
       border: 1px dashed var(--palette-border-10);
       border-radius: $radius-2x;
       padding: space(6);

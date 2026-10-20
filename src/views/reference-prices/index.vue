@@ -64,9 +64,11 @@
 
   const busyProductId = ref(null);
 
-  const { data: requestList, loading, execute } = usePromise(
-    getReferencePriceRequests,
-  );
+  const {
+    data: requestList,
+    loading,
+    execute,
+  } = usePromise(getReferencePriceRequests);
   const { execute: updatePriceExecute, isRejected: updatePriceFailed } =
     usePromise(updateReferencePrice);
   const { execute: markWatchedExecute, isRejected: markWatchedFailed } =
@@ -142,6 +144,7 @@
     }
 
     &__empty {
+      width: 100%;
       border: 1px dashed var(--palette-border-10);
       border-radius: $radius-2x;
       padding: space(6);

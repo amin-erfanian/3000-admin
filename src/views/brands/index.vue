@@ -197,6 +197,7 @@
     }
 
     &__empty {
+      width: 100%;
       border: 1px dashed var(--palette-border-10);
       border-radius: $radius-2x;
       padding: space(6);
