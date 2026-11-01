@@ -3,7 +3,7 @@ export default () => ({
   step2: {
     fake: false,
     brand: null,
-    sku: '',
+    pid: '',
     dimensions: {
       length: '',
       width: '',

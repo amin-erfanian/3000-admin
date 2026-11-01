@@ -62,7 +62,7 @@
             <BaseLabel label="شناسه‌های عمومی" />
 
             <div
-              v-for="(id, index) in publicIds"
+              v-for="(publicId, index) in publicIds"
               :key="index"
               class="public-ids__row"
             >
@@ -73,7 +73,23 @@
                 variant="outlined"
                 direction="ltr"
                 isNumber
-                v-model="publicIds[index]"
+                v-model="publicId.id"
+                :isError="
+                  showErrors && isPublicIdIncomplete(publicId) && !publicId.id
+                "
+              />
+
+              <BaseTextInput
+                class="public-ids__input"
+                :name="`publicIdDescription-${index}`"
+                placeholder="توضیحات"
+                variant="outlined"
+                v-model="publicId.description"
+                :isError="
+                  showErrors &&
+                  isPublicIdIncomplete(publicId) &&
+                  !publicId.description.trim()
+                "
               />
 
               <button
@@ -183,22 +199,28 @@
   );
 
   const isActive = ref(true);
-  const publicIds = ref(['']);
+  const createEmptyPublicId = () => ({ id: '', description: '' });
+  const publicIds = ref([createEmptyPublicId()]);
   const showErrors = ref(false);
   const submitting = ref(false);
   const modalError = ref(null);
 
-  // A public id is valid when it is a non-empty string of digits.
-  // `BaseTextInput` with `isNumber` already strips non-digits, so the
-  // only invalid state here is an empty value.
-  const isPublicIdValid = (value) => /^\d+$/.test(value);
+  // A public id is valid when its id is a non-empty string of digits and it
+  // has a description. `BaseTextInput` with `isNumber` already strips
+  // non-digits, so the only invalid state for the id is an empty value.
+  const isPublicIdValid = ({ id, description }) =>
+    /^\d+$/.test(id) && !!description.trim();
+  const isPublicIdEmpty = ({ id, description }) => !id && !description.trim();
+  // Fully empty rows are ignored on submit; half-filled ones block it.
+  const isPublicIdIncomplete = (publicId) =>
+    !isPublicIdValid(publicId) && !isPublicIdEmpty(publicId);
   const allPublicIdsValid = computed(() =>
     publicIds.value.every(isPublicIdValid),
   );
 
   const addPublicId = () => {
     if (!allPublicIdsValid.value) return;
-    publicIds.value.push('');
+    publicIds.value.push(createEmptyPublicId());
   };
 
   const removePublicId = (index) => {
@@ -222,15 +244,18 @@
         isActive.value = props.category.isActive;
         publicIds.value =
           props.category.publicIds?.length > 0
-            ? [...props.category.publicIds]
-            : [''];
+            ? props.category.publicIds.map(({ id, description }) => ({
+                id,
+                description,
+              }))
+            : [createEmptyPublicId()];
       } else {
         titleFa.value = '';
         titleEn.value = '';
         slug.value = '';
         commission.value = 0;
         isActive.value = true;
-        publicIds.value = [''];
+        publicIds.value = [createEmptyPublicId()];
       }
     },
   );
@@ -251,7 +276,9 @@
       : '',
     commission: Number(commission.value) || 0,
     isActive: isActive.value,
-    publicIds: publicIds.value.filter(isPublicIdValid),
+    publicIds: publicIds.value
+      .filter(isPublicIdValid)
+      .map(({ id, description }) => ({ id, description: description.trim() })),
   });
 
   const handleSubmit = async () => {
@@ -260,6 +287,11 @@
 
     const { valid } = await validate();
     if (!valid) return;
+
+    if (publicIds.value.some(isPublicIdIncomplete)) {
+      modalError.value = 'شناسه و توضیحات هر شناسه عمومی را کامل کنید.';
+      return;
+    }
 
     if (isAddingSubCategory.value && !props.parentId) {
       modalError.value = 'شناسه دسته‌بندی والد الزامی است.';

@@ -364,9 +364,9 @@
         fields: [
           { property: 'titleFa', label: 'عنوان فارسی', value: p.titleFa },
           { property: 'titleEn', label: 'عنوان انگلیسی', value: p.titleEn },
-          { property: 'slug', label: 'شناسه (slug)', value: p.slug },
           { property: 'code', label: 'کد کالا', value: p.code },
-          { property: 'sku', label: 'SKU', value: p.sku },
+          { property: 'pid', label: 'شناسه کالا', value: p.pid },
+          { property: 'slug', label: 'اسلاگ', value: p.slug },
           {
             property: 'referencePrice',
             label: 'قیمت مرجع (ریال)',
